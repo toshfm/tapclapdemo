@@ -26,18 +26,18 @@ export class Rum extends cc.Component {
         return _.blocked.length > 0;
     }
 
-    static addBlock() {
+    static addLock() {
         _.blocked.push(true);
     }
 
-    static removeBlock() {
+    static removeLock() {
         _.blocked.pop();
     }
 
     static nextScene(sceneName: string): void {
         if (!Rum.isBlocked()) {
             cc.log('start transition')
-            Rum.addBlock();
+            Rum.addLock();
             let tempTransistor = cc.instantiate(_.sceneTransistor)!;
             tempTransistor.opacity = 0;
             tempTransistor.zIndex = ZINDEXES.transistor
@@ -58,7 +58,7 @@ export class Rum extends cc.Component {
         cc.tween(transistor)
             .to(_._defaultEffectTime, { opacity: 0 })
             .call(() => {
-                Rum.removeBlock();
+                Rum.removeLock();
                 _.node.removeChild(transistor)
             })
             .start()
@@ -160,19 +160,19 @@ export class Rum extends cc.Component {
 
     /**Shadow screen */
     static shadow(node: cc.Node, isOn: boolean) {
-        Rum.addBlock()
+        Rum.addLock()
         if (isOn) {
             node.addComponent(cc.BlockInputEvents);
             cc.tween(node)
                 .to(_._defaultEffectTime, { opacity: 200 }, { easing: 'fade' })
-                .call(() => Rum.removeBlock())
+                .call(() => Rum.removeLock())
                 .start();
 
         } else {
             cc.tween(node)
                 .to(_._defaultEffectTime, { opacity: 0 }, { easing: 'fade' })
                 .call(() => {
-                    Rum.removeBlock()
+                    Rum.removeLock()
                     if (node.getComponent(cc.BlockInputEvents)) {
                         node.removeComponent(cc.BlockInputEvents)
                     }

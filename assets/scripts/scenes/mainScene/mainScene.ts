@@ -110,6 +110,10 @@ export default class MainScene extends cc.Component {
                 _.startNewLevel();
             }
         });
+        Rum.hoverButton(_.settings);
+        Rum.hoverButton(_.boosterReshuffle);
+        Rum.hoverButton(_.boosterBomb);
+        Rum.hoverButton(_.replay);
         await _.startNewLevel();
     }
 
@@ -119,18 +123,14 @@ export default class MainScene extends cc.Component {
         await _.prepareLevel();
         _.replay.position = cc.v3(0, -1300);
         _.winLoseLabel.position = cc.v3(0, 1300);
-        Rum.hoverButton(_.settings);
-        Rum.hoverButton(_.boosterReshuffle);
-        Rum.hoverButton(_.boosterBomb);
-        Rum.hoverButton(_.replay);
     }
 
     async prepareLevel() {
-        Rum.addBlock();
+        Rum.addLock();
         await _.adaptGridCover();
         _.fillGridWithBlocks();
         _.fillLabels();
-        Rum.removeBlock();
+        Rum.removeLock();
     }
 
     async adaptGridCover(rows?: number, cols?: number): Promise<void> {
@@ -188,7 +188,7 @@ export default class MainScene extends cc.Component {
         if (GameState.boosterReshuffle <= 0) {
             return;
         }
-        Rum.addBlock();
+        Rum.addLock();
         Rum.blink(_.boosterReshuffle);
         _.logic.reshuffle();
         let promises: Promise<void>[] = [];
@@ -203,19 +203,20 @@ export default class MainScene extends cc.Component {
         Promise.all(promises);
         GameState.boosterReshuffle--;
         Rum.setText(_.boosterReshuffleLabel, GameState.boosterReshuffle);
-        Rum.removeBlock();
+        Rum.removeLock();
     }
 
     /**
      * Touch the block on Stage
+     * Could be refactor into small pieces
      * @param block 
      * @returns true if move, false if not move
      */
     async blockTouch(block: cc.Node): Promise<boolean> {
         try {
-            Rum.addBlock();
+            Rum.addLock();
             let response: IInteractResponse;
-            debugger;
+            //Check status of bomb bonus activity
             if (GameState.boosterBombActivated) {
                 GameState.boosterBomb--;
                 Rum.setText(_.boosterBombLabel, GameState.boosterBomb);
@@ -225,9 +226,9 @@ export default class MainScene extends cc.Component {
             } else {
                 response = _.logic.interact((block as INode).gId);
             }
+            //Process Response from logic
             response.boosters?.forEach(booster => {
                 let el = _.blocksOnStage.get(booster)
-                //let boosterName = _.logic.isBooster(booster)
                 if ((el as INode).gTag === 'bomb') {
                     _.boomClip(el);
                 } else if ((el as INode).gTag === 'rocketh') {
@@ -249,7 +250,7 @@ export default class MainScene extends cc.Component {
                 return (false);
             }
         } finally {
-            Rum.removeBlock();
+            Rum.removeLock();
         }
     }
 
@@ -351,7 +352,7 @@ export default class MainScene extends cc.Component {
     }
 
     async winLose() {
-        Rum.addBlock();
+        Rum.addLock();
         try {
             if (GameState.moves <= 0 || GameState.collectedPoints >= GameSettings.targetPoints) {
                 let tweens = [];
@@ -377,7 +378,7 @@ export default class MainScene extends cc.Component {
                 await Promise.all(tweens);
             }
         } finally {
-            Rum.removeBlock();
+            Rum.removeLock();
         }
     }
 

@@ -95,6 +95,7 @@ export class LogicService implements ILogicService, IService {
 
     /**Interact with block
      * booster, bomb or check similar 
+     * TODO: Could be refactor into small pieces
      * @param gId id Of block
      * @param useBomb if we use Bomb booster
     */
@@ -150,15 +151,16 @@ export class LogicService implements ILogicService, IService {
                     }
                 }
             }
+            response.moveSuccess = response.blocks.size > 1 || response.boosters.size >= 1;
             _.processResponse(response);
-            return { ...response, moveSuccess: response.blocks.size > 1 }
+            return response
         } else {
             return null;
         }
     }
 
     private processResponse(response: IInteractResponse) {
-        if (response.blocks.size > 1) {
+        if (response.moveSuccess) {
             _.destroyBlocks(response);
             _.fillNewBlocks();
         }
