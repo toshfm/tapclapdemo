@@ -3,19 +3,18 @@ import { MathHelper } from "../helpers/mathHelper";
 import { IGridElement } from "../interfaces/iGridElement";
 import { IInteractResponse, IInteractResponseChained } from "../interfaces/iInteractResponse";
 import { ILogicService } from "../interfaces/services/iLogicService";
-import { IService } from "../interfaces/services/iService";
+import { Queue } from "../misc/queue";
 import { GameSettings } from "../scenes/mainScene/gameSettings";
 import { GameState } from "../scenes/mainScene/gameState";
-import { Queue } from "../misc/queue";
 
 let _: LogicService;
 
-export class LogicService implements ILogicService, IService {
+export class LogicService implements ILogicService {
     _bonusesOnGrid: number = 0;
     _blocksAll: string[] = Object.values(Blocks).filter((v) => isNaN(Number(v))) as string[]
     _blocksNoBonuses: string[] = (Object.keys(Blocks) as (keyof typeof Blocks)[]).filter(key => isNaN(Number(key)) && key.startsWith('block'))
 
-    init() {
+    constructor() {
         _ = this;
     }
 

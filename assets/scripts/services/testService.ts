@@ -1,8 +1,6 @@
-import { IService } from "../interfaces/services/iService";
 import { ITestService } from "../interfaces/services/iTestService";
 
-export class TestService implements ITestService, IService {
-    init() {}
+export class TestService implements ITestService {
     someWork(): void {
         console.log("some work");
     }

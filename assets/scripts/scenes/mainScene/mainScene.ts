@@ -208,7 +208,7 @@ export default class MainScene extends cc.Component {
 
     /**
      * Touch the block on Stage
-     * Could be refactor into small pieces
+     * TODO: Could be refactor into small pieces
      * @param block 
      * @returns true if move, false if not move
      */
