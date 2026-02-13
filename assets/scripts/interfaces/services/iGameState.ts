@@ -3,6 +3,8 @@ import { IPoint } from "../iPoint";
 
 export interface IGameState {
     initGridPoints(rows: number, cols: number): void;
+    getGridPointsRows(): number;
+    getGridPointsCols(): number;
     setGridPoint(row: number, col: number, point: IPoint | null): void;
     getGridPoint(row: number, col: number): IPoint | null;
     initGridBlocks(rows: number, cols: number): void;

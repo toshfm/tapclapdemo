@@ -3,7 +3,7 @@ import { BLOCKTYPE } from "../enums/blockType";
 import { MathHelper } from "../helpers/mathHelper";
 import { IGridElement } from "../interfaces/iGridElement";
 import { IInteractResponse, IInteractResponseChained } from "../interfaces/iInteractResponse";
-import { IBlockFactory } from "../interfaces/services/iBlockFactory";
+import { IBlockGenerator } from "../interfaces/services/iBlockGenerator";
 import { IGameSettings } from "../interfaces/services/iGameSettings";
 import { IGameState } from "../interfaces/services/iGameState";
 import { ILogicService } from "../interfaces/services/iLogicService";
@@ -14,13 +14,13 @@ let _: LogicService;
 export class LogicService implements ILogicService {
     settings: IGameSettings;
     state: IGameState;
-    blockFactory: IBlockFactory
+    blockGenerator: IBlockGenerator
 
-    constructor(settings: IGameSettings, state: IGameState, blockFactory: IBlockFactory) {
+    constructor(settings: IGameSettings, state: IGameState, blockGenerator: IBlockGenerator) {
         _ = this;
         _.settings = settings;
         _.state = state;
-        _.blockFactory = blockFactory;
+        _.blockGenerator = blockGenerator;
     }
 
     prepareGrid() {
@@ -52,7 +52,7 @@ export class LogicService implements ILogicService {
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 _.state.setGridBlock( row, col, { 
-                    ..._.blockFactory.newBlock(),
+                    ..._.blockGenerator.newBlock(),
                     row: row, 
                     col: col, 
                     isNew: false, 
@@ -178,7 +178,7 @@ export class LogicService implements ILogicService {
             for (let row = 0; row < rows; row++) {
                 _.state.setGridBlock(row, col, existed[row]
                     ? { ...existed[row], isMoved: (existed[row].row != row), row: row, isNew: false }
-                    : { ..._.blockFactory.newBlock(), row: row, col: col, isNew: true, isMoved: false }
+                    : { ..._.blockGenerator.newBlock(), row: row, col: col, isNew: true, isMoved: false }
                 );
             }
         }

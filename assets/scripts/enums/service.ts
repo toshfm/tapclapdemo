@@ -3,5 +3,6 @@ export enum SERVICE {
     GameSettings = 'GameSettings',
     GameState = 'GameState',
     UI = 'UI',
-    BlockFactory = 'BlockFactory'
+    BlockGenerator = 'BlockGenerator',
+    BlockInteractor = 'BlockInteractor'
 }

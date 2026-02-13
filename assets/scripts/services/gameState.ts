@@ -13,7 +13,15 @@ export class GameState implements IGameState {
     private _boosterBombActivated: boolean;
 
     initGridPoints(rows: number, cols: number): void {
-        this._gridPoints = Array(rows).fill(null).map(() => Array(cols).fill(null))
+        this._gridPoints = Array(rows).fill(null).map(() => Array(cols).fill(null));
+    }
+
+    getGridPointsRows(): number {
+        return this._gridPoints.length;
+    }
+
+    getGridPointsCols(): number {
+        return this._gridPoints[0].length;
     }
 
     setGridPoint(row, col, point) {

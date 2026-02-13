@@ -1,6 +1,6 @@
 import { IBlockData } from "../iBlockData";
 
-export interface IBlockFactory {
+export interface IBlockGenerator {
     newBlock() : IBlockData;
     normalBlock() : IBlockData;
     bonusBlock() : IBlockData;
