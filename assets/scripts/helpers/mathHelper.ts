@@ -41,4 +41,16 @@ export class MathHelper {
         }
         return array;
     }
+
+    static clamp(val: number, min: number, max: number): number {
+        return Math.max(min, Math.min(val, max));
+    }
+
+    static getRandomEnum<T>(enumeration: T): T[keyof T] {
+        const values = Object.keys(enumeration)
+            .map(k => Number(k))
+            .filter(v => !isNaN(v));
+        
+        return values[Math.floor(Math.random() * values.length)] as any;
+    }
 }

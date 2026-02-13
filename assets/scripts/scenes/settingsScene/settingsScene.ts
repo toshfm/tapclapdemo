@@ -1,5 +1,6 @@
-import { Rum } from "../../Rum";
-import { GameSettings } from "../mainScene/gameSettings";
+import { IGameSettings } from "../../interfaces/services/iGameSettings";
+import { IUiUtils } from "../../interfaces/services/iUiUtils";
+import { getSettings, getUI } from "../../ioc/init";
 
 const { ccclass, property } = cc._decorator;
 
@@ -7,6 +8,9 @@ let _: SettingsScene;
 
 @ccclass
 export default class SettingsScene extends cc.Component {
+    ui: IUiUtils;
+    settings: IGameSettings;
+
     play: cc.Node;
     rows: cc.Node;
     cols: cc.Node;
@@ -17,6 +21,8 @@ export default class SettingsScene extends cc.Component {
 
     onLoad() {
         _ = this;
+        _.ui = getUI();
+        _.settings = getSettings();
         _.play = cc.find('Canvas/play');
         _.rows = cc.find('Canvas/boxes/rows');
         _.cols = cc.find('Canvas/boxes/cols');
@@ -28,32 +34,32 @@ export default class SettingsScene extends cc.Component {
 
     start() {
         _.initSettings();
-        Rum.hoverButton(_.play);
+        _.ui.hoverButton(_.play);
         _.play.on(cc.Node.EventType.TOUCH_START, () => {
-            if (!Rum.isBlocked()) {
+            if (!_.ui.uiIsLocked()) {
                 _.scheduleOnce(function () {
                     _.updateSettings();
-                    Rum.nextScene("Main");
+                    _.ui.nextScene("Main");
                 }, 0.1);
             }
         });
     }
 
     initSettings() {
-        _.cols.children[1].getComponent(cc.EditBox).string = GameSettings.cols.toString();
-        _.rows.children[1].getComponent(cc.EditBox).string = GameSettings.rows.toString();
-        _.points.children[1].getComponent(cc.EditBox).string = GameSettings.targetPoints.toString();
-        _.moves.children[1].getComponent(cc.EditBox).string = GameSettings.startedMoves.toString();
-        _.reshuffle.children[1].getComponent(cc.EditBox).string = GameSettings.startedBoosterReshuffle.toString();
-        _.bomb.children[1].getComponent(cc.EditBox).string = GameSettings.startedBoosterBomb.toString();
+        _.cols.children[1].getComponent(cc.EditBox).string = _.settings.getCols().toString();
+        _.rows.children[1].getComponent(cc.EditBox).string = _.settings.getRows().toString();
+        _.points.children[1].getComponent(cc.EditBox).string = _.settings.getTargetPoints().toString();
+        _.moves.children[1].getComponent(cc.EditBox).string = _.settings.getStartedMoves().toString();
+        _.reshuffle.children[1].getComponent(cc.EditBox).string = _.settings.getStartedBoosterReshuffle().toString();
+        _.bomb.children[1].getComponent(cc.EditBox).string = _.settings.getStartedBoosterBomb().toString();
     }
 
     updateSettings() {
-        GameSettings.cols = Number(_.cols.children[1].getComponent(cc.EditBox).string);
-        GameSettings.rows = Number(_.rows.children[1].getComponent(cc.EditBox).string);
-        GameSettings.targetPoints = Number(_.points.children[1].getComponent(cc.EditBox).string);
-        GameSettings.startedMoves = Number(_.moves.children[1].getComponent(cc.EditBox).string);
-        GameSettings.startedBoosterReshuffle = Number(_.reshuffle.children[1].getComponent(cc.EditBox).string);
-        GameSettings.startedBoosterBomb = Number(_.bomb.children[1].getComponent(cc.EditBox).string);
+        _.settings.setCols(Number(_.cols.children[1].getComponent(cc.EditBox).string));
+        _.settings.setRows(Number(_.rows.children[1].getComponent(cc.EditBox).string));
+        _.settings.setTargetPoints(Number(_.points.children[1].getComponent(cc.EditBox).string));
+        _.settings.setStartedMoves(Number(_.moves.children[1].getComponent(cc.EditBox).string));
+        _.settings.setStartedBoosterReshuffle(Number(_.reshuffle.children[1].getComponent(cc.EditBox).string));
+        _.settings.setStartedBoosterBomb(Number(_.bomb.children[1].getComponent(cc.EditBox).string));
     }
 }

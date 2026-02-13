@@ -1,12 +1,13 @@
-import { ZINDEXES } from "../../enums/zIndexes";
+import { BLOCK } from "../../enums/block";
+import { ZINDEX } from "../../enums/zIndexes";
 import { MathHelper } from "../../helpers/mathHelper";
 import { IInteractResponse } from "../../interfaces/iInteractResponse";
 import { INode } from "../../interfaces/iNode";
+import { IGameSettings } from "../../interfaces/services/iGameSettings";
+import { IGameState } from "../../interfaces/services/iGameState";
 import { ILogicService } from "../../interfaces/services/iLogicService";
-import { getLogic, ServicesInitializer } from "../../ioc/init";
-import { Rum } from "../../Rum";
-import { GameSettings } from "./gameSettings";
-import { GameState } from "./gameState";
+import { IUiUtils } from "../../interfaces/services/iUiUtils";
+import { getLogic, DIInitializer, getUI, getSettings, getState } from "../../ioc/init";
 
 let _: MainScene;
 
@@ -15,7 +16,10 @@ const { ccclass, property } = cc._decorator;
 @ccclass
 export default class MainScene extends cc.Component {
 
-    logic: ILogicService
+    logic: ILogicService;
+    ui: IUiUtils;
+    settings: IGameSettings;
+    state: IGameState;
 
     blocksOnStage: Map<string, cc.Node> = new Map();
     blocksPool: cc.NodePool;
@@ -60,19 +64,23 @@ export default class MainScene extends cc.Component {
     boosterBomb: cc.Node;
     progress: cc.Node;
     canvas: cc.Node;
-    settings: cc.Node;
+    settingsNode: cc.Node;
     shadow: cc.Node;
     replay: cc.Node;
     winLoseLabel: cc.Node;
 
     onLoad() {
-        ServicesInitializer.initialize();
+        DIInitializer.initialize();
         _ = this;
         _.logic = getLogic();
+        _.ui = getUI();
+        _.settings = getSettings();
+        _.state = getState();
+
         _.blocksPool = new cc.NodePool("Block");
         _.gridCoverNode = cc.find('Canvas/gameplay_node/parent');
         _.movesLabel = cc.find('Canvas/moves_node/moves');
-        _.movesLabel.parent.zIndex = ZINDEXES.movesNode;
+        _.movesLabel.parent.zIndex = ZINDEX.movesNode;
         _.movesBackground = cc.find('Canvas/moves_node/bg_moves');
         _.pointsLabel = cc.find('Canvas/moves_node/points');
         _.boosterReshuffle = cc.find('Canvas/boosters_node/boosters_panel/reshuffle_booster/icon');
@@ -81,7 +89,7 @@ export default class MainScene extends cc.Component {
         _.boosterBombLabel = cc.find('Canvas/boosters_node/boosters_panel/bomb_booster/label');
         _.canvas = cc.find('Canvas');
         _.progress = cc.find('Canvas/moves_node/progress');
-        _.settings = cc.find('Canvas/settings');
+        _.settingsNode = cc.find('Canvas/settings');
         _.shadow = cc.find('Canvas/shadow');
         _.replay = cc.find('Canvas/gameplay_node/replay');
         _.winLoseLabel = cc.find('Canvas/gameplay_node/winlose');
@@ -89,36 +97,36 @@ export default class MainScene extends cc.Component {
 
     async start() {
         _.boosterReshuffle.on(cc.Node.EventType.TOUCH_START, () => {
-            if (!Rum.isBlocked()) {
+            if (!_.ui.uiIsLocked()) {
                 _.reshuffle();
             }
         });
         _.boosterBomb.on(cc.Node.EventType.TOUCH_START, () => {
-            if (!Rum.isBlocked()) {
+            if (!_.ui.uiIsLocked()) {
                 _.boosterBombToggle();
             }
         });
-        _.settings.on(cc.Node.EventType.TOUCH_START, () => {
-            if (!Rum.isBlocked()) {
+        _.settingsNode.on(cc.Node.EventType.TOUCH_START, () => {
+            if (!_.ui.uiIsLocked()) {
                 _.scheduleOnce(function () {
-                    Rum.nextScene("Settings");
+                    _.ui.nextScene("Settings");
                 }, 0.1);
             }
         });
         _.replay.on(cc.Node.EventType.TOUCH_START, () => {
-            if (!Rum.isBlocked()) {
+            if (!_.ui.uiIsLocked()) {
                 _.startNewLevel();
             }
         });
-        Rum.hoverButton(_.settings);
-        Rum.hoverButton(_.boosterReshuffle);
-        Rum.hoverButton(_.boosterBomb);
-        Rum.hoverButton(_.replay);
+        _.ui.hoverButton(_.settingsNode);
+        _.ui.hoverButton(_.boosterReshuffle);
+        _.ui.hoverButton(_.boosterBomb);
+        _.ui.hoverButton(_.replay);
         await _.startNewLevel();
     }
 
     async startNewLevel() {
-        Rum.shadow(_.shadow, false);
+        _.ui.shadow(_.shadow, false);
         _.logic.prepareGrid();
         await _.prepareLevel();
         _.replay.position = cc.v3(0, -1300);
@@ -126,18 +134,18 @@ export default class MainScene extends cc.Component {
     }
 
     async prepareLevel() {
-        Rum.addLock();
+        _.ui.addLock();
         await _.adaptGridCover();
         _.fillGridWithBlocks();
         _.fillLabels();
-        Rum.removeLock();
+        _.ui.removeLock();
     }
 
     async adaptGridCover(rows?: number, cols?: number): Promise<void> {
-        rows ??= GameSettings.rows;
-        cols ??= GameSettings.cols;
-        let width = cols * GameSettings.colWidth + GameSettings.colWidth * 0.75;
-        let height = rows * GameSettings.rowHeight + GameSettings.rowHeight * 0.75;
+        rows ??= _.settings.getRows();
+        cols ??= _.settings.getCols();
+        let width = cols * _.settings.getColWidth() + _.settings.getColWidth() * 0.75;
+        let height = rows * _.settings.getRowHeight() + _.settings.getRowHeight() * 0.75;
         return new Promise<void>((resolve) => {
             cc.tween(_.gridCoverNode.parent)
                 .to(0.2, { width: width, height: height }, { easing: 'backIn' })
@@ -152,58 +160,58 @@ export default class MainScene extends cc.Component {
     }
 
     fillLabels() {
-        GameState.collectedPoints = 0;
-        GameState.moves = GameSettings.startedMoves;
-        GameState.boosterBomb = GameSettings.startedBoosterBomb
-        GameState.boosterReshuffle = GameSettings.startedBoosterReshuffle;
+        _.state.setCollectedPoints(0);
+        _.state.setMoves(_.settings.getStartedMoves());
+        _.state.setBoosterBomb(_.settings.getStartedBoosterBomb());
+        _.state.setBoosterReshuffle(_.settings.getStartedBoosterReshuffle());
         _.updateMoves();
         _.updatePoints();
-        Rum.setText(_.boosterReshuffleLabel, GameSettings.startedBoosterReshuffle);
-        Rum.setText(_.boosterBombLabel, GameSettings.startedBoosterBomb);
+        _.ui.setText(_.boosterReshuffleLabel, _.settings.getStartedBoosterReshuffle());
+        _.ui.setText(_.boosterBombLabel, _.settings.getStartedBoosterBomb());
         _.setBoosterActivated(false);
     }
 
     fillGridWithBlocks() {
-        for (let row = 0; row < GameSettings.rows; row++) {
-            for (let col = 0; col < GameSettings.cols; col++) {
+        for (let row = 0; row < _.settings.getRows(); row++) {
+            for (let col = 0; col < _.settings.getCols(); col++) {
                 _.createBlock(row, col);
             }
         }
     }
 
     boosterBombToggle() {
-        if (GameState.boosterBomb <= 0 && !GameState.boosterBombActivated) {
+        if (_.state.getBoosterBomb() <= 0 && !_.state.getBoosterBombActivated()) {
             return;
         }
-        _.setBoosterActivated(!GameState.boosterBombActivated);
+        _.setBoosterActivated(!_.state.getBoosterBombActivated());
 
     }
 
     setBoosterActivated(status: boolean) {
-        GameState.boosterBombActivated = status;
+        _.state.setBoosterBombActivated(status);
         _.boosterBomb.color = status ? cc.Color.YELLOW : cc.Color.WHITE
     }
 
     reshuffle() {
-        if (GameState.boosterReshuffle <= 0) {
+        if (_.state.getBoosterReshuffle() <= 0) {
             return;
         }
-        Rum.addLock();
-        Rum.blink(_.boosterReshuffle);
+        _.ui.addLock();
+        _.ui.blink(_.boosterReshuffle);
         _.logic.reshuffle();
         let promises: Promise<void>[] = [];
-        for (let col = 0; col < GameSettings.cols; col++) {
-            for (let row = 0; row < GameSettings.rows; row++) {
-                let block = _.blocksOnStage.get(GameState.gridBlocks[row][col].id)
+        for (let col = 0; col < _.settings.getCols(); col++) {
+            for (let row = 0; row < _.settings.getRows(); row++) {
+                let block = _.blocksOnStage.get(_.state.getGridBlock(row,col).id)
                 if (block) {
-                    promises.push(Rum.toPositionXY(block, GameState.gridPoints[row][col].x, GameState.gridPoints[row][col].y, 0.5));
+                    promises.push(_.ui.toPositionXY(block, _.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y, 0.5));
                 }
             }
         }
         Promise.all(promises);
-        GameState.boosterReshuffle--;
-        Rum.setText(_.boosterReshuffleLabel, GameState.boosterReshuffle);
-        Rum.removeLock();
+        _.state.setBoosterReshuffle(_.state.getBoosterReshuffle()-1);
+        _.ui.setText(_.boosterReshuffleLabel, _.state.getBoosterReshuffle());
+        _.ui.removeLock();
     }
 
     /**
@@ -214,12 +222,12 @@ export default class MainScene extends cc.Component {
      */
     async blockTouch(block: cc.Node): Promise<boolean> {
         try {
-            Rum.addLock();
+            _.ui.addLock();
             let response: IInteractResponse;
             //Check status of bomb bonus activity
-            if (GameState.boosterBombActivated) {
-                GameState.boosterBomb--;
-                Rum.setText(_.boosterBombLabel, GameState.boosterBomb);
+            if (_.state.getBoosterBombActivated()) {
+                _.state.setBoosterBomb(_.state.getBoosterBomb()-1);
+                _.ui.setText(_.boosterBombLabel, _.state.getBoosterBomb());
                 _.boosterBombToggle();
                 response = _.logic.interact((block as INode).gId, true);
                 _.boomClip(block);
@@ -239,30 +247,30 @@ export default class MainScene extends cc.Component {
                 _.destroyBlock(el);
             });
             if (response.moveSuccess) {
-                GameState.moves--;
-                Rum.blink(_.movesBackground);
-                Rum.pulse(_.movesLabel);
+                _.state.minusMove();
+                _.ui.blink(_.movesBackground);
+                _.ui.pulse(_.movesLabel);
                 _.updateMoves();
                 await _.processBlocks(response.blocks);
                 return (true);
             } else {
-                Rum.pulse(block);
+                _.ui.pulse(block);
                 return (false);
             }
         } finally {
-            Rum.removeLock();
+            _.ui.removeLock();
         }
     }
 
     boomClip(block) {
-        let clipNode = Rum.playClip(_.bigBoom, { x: block.x, y: block.y + 50 }, _.gridCoverNode, ZINDEXES.boom);
+        let clipNode = _.ui.playClip(_.bigBoom, { x: block.x, y: block.y + 50 }, _.gridCoverNode, ZINDEX.boom);
         clipNode.setParent(_.canvas);
     }
 
     lightingClip(block, vertical?: boolean) {
         let x = vertical ? block.x : 0;
         let y = vertical ? 0 : block.y;
-        let clipNode = Rum.playClip(_.lighting, { x: x, y: y }, _.gridCoverNode, ZINDEXES.boom);
+        let clipNode = _.ui.playClip(_.lighting, { x: x, y: y }, _.gridCoverNode, ZINDEX.boom);
         if(vertical) {
             clipNode.angle = 90;
         }
@@ -276,17 +284,17 @@ export default class MainScene extends cc.Component {
             promises.push(_.destroyBlockToPoints(gridEl));
         });
         //Fill With new blocks
-        for (let col = 0; col < GameSettings.cols; col++) {
+        for (let col = 0; col < _.settings.getCols(); col++) {
             // row above the Grid if new 
             let newLine = 0;
-            for (let row = 0; row < GameSettings.rows; row++) {
-                if (GameState.gridBlocks[row][col].isMoved) {
-                    let block = _.blocksOnStage.get(GameState.gridBlocks[row][col].id)
+            for (let row = 0; row < _.settings.getRows(); row++) {
+                if (_.state.getGridBlock(row,col).isMoved) {
+                    let block = _.blocksOnStage.get(_.state.getGridBlock(row,col).id)
                     if (block) {
-                        promises.push(Rum.toPositionXY(block, GameState.gridPoints[row][col].x, GameState.gridPoints[row][col].y, 0.5));
+                        promises.push(_.ui.toPositionXY(block, _.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y, 0.5));
                     }
-                } else if (GameState.gridBlocks[row][col].isNew) {
-                    promises.push(Rum.toPositionXY(_.createBlock(row, col, newLine), GameState.gridPoints[row][col].x, GameState.gridPoints[row][col].y, 0.5));
+                } else if (_.state.getGridBlock(row,col).isNew) {
+                    promises.push(_.ui.toPositionXY(_.createBlock(row, col, newLine), _.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y, 0.5));
                     newLine++;
                 }
             }
@@ -295,16 +303,16 @@ export default class MainScene extends cc.Component {
     }
 
     createBlock(row: number, col: number, newLine?: number): cc.Node {
-        let block = _.blocksPool.get() ?? Rum.createNode(_.block);
+        let block = _.blocksPool.get() ?? _.ui.createNode(_.block);
         block.scale = 1;
         block.angle = 0;
-        block.getComponent(cc.Sprite).spriteFrame = _[GameState.gridBlocks[row][col].block];
-        (block as INode).gId = GameState.gridBlocks[row][col].id;
-        (block as INode).gTag = GameState.gridBlocks[row][col].block;
+        block.getComponent(cc.Sprite).spriteFrame = _[BLOCK[_.state.getGridBlock(row,col).block]];
+        (block as INode).gId = _.state.getGridBlock(row,col).id;
+        (block as INode).gTag = BLOCK[_.state.getGridBlock(row,col).block];
         block.setParent(_.gridCoverNode);
-        block.zIndex = ZINDEXES.blocks;
+        block.zIndex = ZINDEX.blocks;
         block.on(cc.Node.EventType.TOUCH_START, async () => {
-            if (!Rum.isBlocked()) {
+            if (!_.ui.uiIsLocked()) {
                 //true - we made a move; false - nothing to move
                 if (await _.blockTouch(block)) {
                     await _.winLose();
@@ -313,30 +321,30 @@ export default class MainScene extends cc.Component {
         });
         _.blocksOnStage.set((block as INode).gId, block);
         if (newLine === undefined) {
-            block.setPosition(GameState.gridPoints[row][col].x, GameState.gridPoints[row][col].y);
+            block.setPosition(_.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y);
         } else {
-            block.setPosition(GameState.gridPoints[row][col].x, GameState.gridPoints[GameSettings.rows - 1][col].y + GameSettings.rowHeight * 2 + GameSettings.rowHeight * newLine)
+            block.setPosition(_.state.getGridPoint(row,col).x, _.state.getGridPoint(_.settings.getRows() - 1,col).y + _.settings.getRowHeight() * 2 + _.settings.getRowHeight() * newLine)
         }
         return block
     }
 
     async destroyBlockToPoints(gridEl: cc.Node): Promise<void> {
         if (gridEl) {
-            gridEl.zIndex = ZINDEXES.flyingBlocks;
+            gridEl.zIndex = ZINDEX.flyingBlocks;
             //remove from Mask
             gridEl.setParent(_.canvas);
             return new Promise<void>((resolve) => {
                 cc.tween(gridEl)
                     .to(MathHelper.getRandomFloat(0.2, 0.4), {
-                        position: cc.v3(gridEl.getPosition().add(cc.v2(MathHelper.getRandomInt(-GameSettings.colWidth * 2, GameSettings.colWidth * 2), MathHelper.getRandomInt(-GameSettings.colWidth * 2, GameSettings.colWidth * 2)))),
+                        position: cc.v3(gridEl.getPosition().add(cc.v2(MathHelper.getRandomInt(-_.settings.getColWidth() * 2, _.settings.getColWidth() * 2), MathHelper.getRandomInt(-_.settings.getColWidth() * 2, _.settings.getColWidth() * 2)))),
                         scale: 1.1,
                         angle: MathHelper.getRandomInt(-1000, 1000)
                     }, { easing: 'circInOut' })
-                    .to(MathHelper.getRandomFloat(0.2, 0.8), { position: cc.v3(Rum.getWorldCoord(_.pointsLabel, _.canvas)), scale: 0.7 }, { easing: 'circIn' })
+                    .to(MathHelper.getRandomFloat(0.2, 0.8), { position: cc.v3(_.ui.getWorldCoord(_.pointsLabel, _.canvas)), scale: 0.7 }, { easing: 'circIn' })
                     .call(() => {
-                        GameState.collectedPoints++;
+                        _.state.addCollectedPoins();
                         _.updatePoints();
-                        Rum.pulse(_.movesLabel.parent);
+                        _.ui.pulse(_.movesLabel.parent);
                         gridEl.off(cc.Node.EventType.TOUCH_START);
                         _.destroyBlock(gridEl)
                         resolve();
@@ -352,9 +360,9 @@ export default class MainScene extends cc.Component {
     }
 
     async winLose() {
-        Rum.addLock();
+        _.ui.addLock();
         try {
-            if (GameState.moves <= 0 || GameState.collectedPoints >= GameSettings.targetPoints) {
+            if (_.state.getMoves() <= 0 || _.state.getCollectedPoints() >= _.settings.getTargetPoints()) {
                 let tweens = [];
                 _.blocksOnStage.forEach(async block => {
                     tweens.push(new Promise<void>((resolve) => {
@@ -367,27 +375,27 @@ export default class MainScene extends cc.Component {
                             .start()
                     }));
                 })
-                Rum.shadow(_.shadow, true);
+                _.ui.shadow(_.shadow, true);
                 await Promise.all(tweens);
                 await _.adaptGridCover(7, 7);
                 tweens = [];
-                tweens.push(Rum.toPositionXY(_.replay, 0, -150, 0.3));
-                _.winLoseLabel.getComponent(cc.Label).string = GameState.collectedPoints >= GameSettings.targetPoints
+                tweens.push(_.ui.toPositionXY(_.replay, 0, -150, 0.3));
+                _.winLoseLabel.getComponent(cc.Label).string = _.state.getCollectedPoints() >= _.settings.getTargetPoints()
                     ? 'ПОБЕДА!' : 'ПРОИГРАЛ!'
-                tweens.push(Rum.toPositionXY(_.winLoseLabel, 0, 230, 0.3));
+                tweens.push(_.ui.toPositionXY(_.winLoseLabel, 0, 230, 0.3));
                 await Promise.all(tweens);
             }
         } finally {
-            Rum.removeLock();
+            _.ui.removeLock();
         }
     }
 
     updatePoints() {
-        _.progress.getComponent(cc.ProgressBar).progress = GameState.collectedPoints / GameSettings.targetPoints;
-        Rum.setText(_.pointsLabel, `${GameState.collectedPoints}/${GameSettings.targetPoints}`);
+        _.progress.getComponent(cc.ProgressBar).progress = _.state.getCollectedPoints() / _.settings.getTargetPoints();
+        _.ui.setText(_.pointsLabel, `${_.state.getCollectedPoints()}/${_.settings.getTargetPoints()}`);
     }
 
     updateMoves() {
-        Rum.setText(_.movesLabel, GameState.moves);
+        _.ui.setText(_.movesLabel, _.state.getMoves());
     }
 }

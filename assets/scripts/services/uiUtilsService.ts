@@ -1,47 +1,45 @@
-import { ZINDEX } from "./enums/zIndexes";
+import { ZINDEX } from "../enums/zIndexes";
+import { IUiUtils } from "../interfaces/services/iUiUtils";
+import PersistData from "../PersistData";
 
-const { ccclass, property } = cc._decorator;
+let _: UiUtils;
 
-let _: Rum;
+export class UiUtils implements IUiUtils {
+    private _uilocked: boolean[] = [];
+    private _sceneTransistor: cc.Prefab;
+    private _simpleSprite: cc.Prefab;
+    private _persistNode: cc.Node;
+    private _defaultEffectTime: number = 0.2;
 
-@ccclass
-export class Rum extends cc.Component {
-
-    @property(cc.Prefab)
-    simpleSprite: cc.Prefab = null;
-
-    @property(cc.Prefab)
-    sceneTransistor: cc.Prefab = null;
-
-    _defaultEffectTime = 0.2;
-
-    blocked: boolean[]  = [];
-
-    onLoad(): void {
-        cc.game.addPersistRootNode(this.node);
+    constructor() {
         _ = this;
+        _._persistNode = cc.find('PersistNode');
+        cc.game.addPersistRootNode(_._persistNode);
+        let persistData = (_._persistNode.getComponent('PersistData') as PersistData);
+        _._sceneTransistor = persistData.sceneTransistor;
+        _._simpleSprite = persistData.simpleSprite;
     }
 
-    static isBlocked(): boolean {
-        return _.blocked.length > 0;
+    uiIsLocked(): boolean {
+        return _._uilocked.length > 0;
     }
 
-    static addLock() {
-        _.blocked.push(true);
+    addLock() {
+        _._uilocked.push(true);
     }
 
-    static removeLock() {
-        _.blocked.pop();
+    removeLock() {
+        _._uilocked.pop();
     }
 
-    static nextScene(sceneName: string): void {
-        if (!Rum.isBlocked()) {
+    nextScene(sceneName: string): void {
+        if (!_.uiIsLocked()) {
             cc.log('start transition')
-            Rum.addLock();
-            let tempTransistor = cc.instantiate(_.sceneTransistor)!;
+            _.addLock();
+            let tempTransistor = cc.instantiate(_._sceneTransistor)!;
             tempTransistor.opacity = 0;
             tempTransistor.zIndex = ZINDEX.transistor
-            _.node.addChild(tempTransistor)
+            _._persistNode.addChild(tempTransistor)
 
             cc.tween(tempTransistor)
                 .to(_._defaultEffectTime, { opacity: 255 })
@@ -54,17 +52,17 @@ export class Rum extends cc.Component {
 
     onSceneLaunched() {
         cc.log('scene launched');
-        let transistor = cc.find('Rum/Transistor')!;
+        let transistor = cc.find('PersistNode/Transistor')!;
         cc.tween(transistor)
             .to(_._defaultEffectTime, { opacity: 0 })
             .call(() => {
-                Rum.removeLock();
-                _.node.removeChild(transistor)
+                _.removeLock();
+                _._persistNode.removeChild(transistor)
             })
             .start()
     }
 
-    static createNode<T extends cc.Prefab | cc.SpriteFrame>(item: T, pos?: { x: number, y: number }, parent?: cc.Node, zIndex?: number, spriteFrameForPrefab?: cc.SpriteFrame): cc.Node {
+    createNode<T extends cc.Prefab | cc.SpriteFrame>(item: T, pos?: { x: number, y: number }, parent?: cc.Node, zIndex?: number, spriteFrameForPrefab?: cc.SpriteFrame): cc.Node {
         let result: cc.Node;
         if (item instanceof cc.Prefab) {
             result = cc.instantiate(item);
@@ -72,7 +70,7 @@ export class Rum extends cc.Component {
                 result.getComponent(cc.Sprite).spriteFrame = spriteFrameForPrefab;
             }
         } else if (item instanceof cc.SpriteFrame) {
-            result = cc.instantiate(_.simpleSprite);
+            result = cc.instantiate(_._simpleSprite);
             result.getComponent(cc.Sprite)!.spriteFrame = item;
         }
         if (parent) {
@@ -88,7 +86,7 @@ export class Rum extends cc.Component {
         return result;
     }
 
-    static async toPosition(node: cc.Node, nodePosition: cc.Node, time: number = _._defaultEffectTime): Promise<void> {
+    async toPosition(node: cc.Node, nodePosition: cc.Node, time: number = _._defaultEffectTime): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             cc.tween(node)
                 .to(time, { position: cc.v3(nodePosition?.getPosition()) }, { easing: 'fade' })
@@ -97,7 +95,7 @@ export class Rum extends cc.Component {
         })
     }
 
-    static async toPositionXY(node: cc.Node, x: number, y: number, time: number = _._defaultEffectTime): Promise<void> {
+    async toPositionXY(node: cc.Node, x: number, y: number, time: number = _._defaultEffectTime): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             cc.tween(node)
                 .to(time, { position: cc.v3(x, y, 0) }, { easing: 'backOut' })
@@ -106,28 +104,28 @@ export class Rum extends cc.Component {
         })
     }
 
-    static setText(node: cc.Node, text: string | number) {
+    setText(node: cc.Node, text: string | number) {
         node.getComponent(cc.Label).string = text.toString();
     }
 
-    static async blink(node: cc.Node) {
+    async blink(node: cc.Node) {
         node.color = cc.Color.YELLOW;
-        await Rum.sleep(200);
+        await _.sleep(200);
         node.color = cc.Color.WHITE;
     }
 
-    static getWorldCoord(node: cc.Node, canvas: cc.Node): cc.Vec3 | cc.Vec2 {
+    getWorldCoord(node: cc.Node, canvas: cc.Node): cc.Vec3 | cc.Vec2 {
         //count canvas offset
         let result = node.parent.convertToWorldSpaceAR(node.getPosition());
         return result.subtract(canvas.parent.convertToWorldSpaceAR(canvas.getPosition()));
     }
 
-    static async pulse(node: cc.Node) {
-        await Rum.tweenScale(node, 1.1, 0.1);
-        await Rum.tweenScale(node, 1, 0.1);
+    async pulse(node: cc.Node) {
+        await _.tweenScale(node, 1.1, 0.1);
+        await _.tweenScale(node, 1, 0.1);
     }
 
-    static tweenScale(node: cc.Node, num: number, duration: number = _._defaultEffectTime): Promise<void> {
+    tweenScale(node: cc.Node, num: number, duration: number = _._defaultEffectTime): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             cc.tween(node)
                 .to(duration, { scale: num }, { easing: 'fade' })
@@ -136,13 +134,13 @@ export class Rum extends cc.Component {
         })
     }
 
-    static sleep(milliseconds: number): Promise<void> {
+    sleep(milliseconds: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, milliseconds));
     }
 
-    static hoverButton(node: cc.Node) {
+    hoverButton(node: cc.Node) {
         node.on(cc.Node.EventType.MOUSE_ENTER, async () => {
-            if (!Rum.isBlocked()) {
+            if (!_.uiIsLocked()) {
                 cc.tween(node)
                     .to(0.15, { scale: 1.1 }, { easing: 'backOut' })
                     .start();
@@ -150,7 +148,7 @@ export class Rum extends cc.Component {
         });
 
         node.on(cc.Node.EventType.MOUSE_LEAVE, async () => {
-            if (!Rum.isBlocked()) {
+            if (!_.uiIsLocked()) {
                 cc.tween(node)
                     .to(0.15, { scale: 1 }, { easing: 'backOut' })
                     .start();
@@ -159,20 +157,20 @@ export class Rum extends cc.Component {
     }
 
     /**Shadow screen */
-    static shadow(node: cc.Node, isOn: boolean) {
-        Rum.addLock()
+    shadow(node: cc.Node, isOn: boolean) {
+        _.addLock()
         if (isOn) {
             node.addComponent(cc.BlockInputEvents);
             cc.tween(node)
                 .to(_._defaultEffectTime, { opacity: 200 }, { easing: 'fade' })
-                .call(() => Rum.removeLock())
+                .call(() => _.removeLock())
                 .start();
 
         } else {
             cc.tween(node)
                 .to(_._defaultEffectTime, { opacity: 0 }, { easing: 'fade' })
                 .call(() => {
-                    Rum.removeLock()
+                    _.removeLock()
                     if (node.getComponent(cc.BlockInputEvents)) {
                         node.removeComponent(cc.BlockInputEvents)
                     }
@@ -181,8 +179,8 @@ export class Rum extends cc.Component {
         }
     }
 
-    static playClip(prefab: cc.Prefab, pos?: {x: number, y: number}, parent?: cc.Node, zIndex?: number): cc.Node {
-        let clip = Rum.createNode(prefab, pos, parent, zIndex); 
+    playClip(prefab: cc.Prefab, pos?: { x: number, y: number }, parent?: cc.Node, zIndex?: number): cc.Node {
+        let clip = _.createNode(prefab, pos, parent, zIndex);
         clip.getComponent(cc.Animation).play();
         return clip;
     }

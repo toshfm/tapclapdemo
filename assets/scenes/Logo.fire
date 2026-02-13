@@ -484,7 +484,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Rum",
+    "_name": "PersistNode",
     "_objFlags": 0,
     "_parent": {
       "__id__": 1
@@ -545,23 +545,7 @@
     "_is3DNode": false,
     "_groupIndex": 0,
     "groupIndex": 0,
-    "_id": "d7iW9TACFKFakg34oRvlB+"
-  },
-  {
-    "__type__": "7f608A5+0FBvJ6eov3GJMyF",
-    "_name": "",
-    "_objFlags": 0,
-    "node": {
-      "__id__": 12
-    },
-    "_enabled": true,
-    "simpleSprite": {
-      "__uuid__": "a1cd0cae-d139-4ab2-a992-30bd88d907bb"
-    },
-    "sceneTransistor": {
-      "__uuid__": "0fecfe04-8b13-426a-8fa0-e02df1d3ea16"
-    },
-    "_id": "4fGOCPHutIc4mgxDuUVcf1"
+    "_id": "819lQZJtBDhqk0hRZayD/+"
   },
   {
     "__type__": "cc.Widget",
@@ -588,6 +572,22 @@
     "_isAbsVerticalCenter": true,
     "_originalWidth": 0,
     "_originalHeight": 0,
-    "_id": "2eJ3fW235KG5uCtkUAUF4p"
+    "_id": "2c2H2FOY9C+42rlHgfQJYa"
+  },
+  {
+    "__type__": "392c2VarlBJfK2z1NVb606N",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 12
+    },
+    "_enabled": true,
+    "simpleSprite": {
+      "__uuid__": "a1cd0cae-d139-4ab2-a992-30bd88d907bb"
+    },
+    "sceneTransistor": {
+      "__uuid__": "0fecfe04-8b13-426a-8fa0-e02df1d3ea16"
+    },
+    "_id": "edu5k12qVJZqUCvnA2ig40"
   }
 ]

@@ -1,9 +1,9 @@
-import { getLogic, ServicesInitializer } from "../assets/scripts/ioc/init";
-import { GameState } from "../assets/scripts/scenes/mainScene/gameState";
+import { getLogic, DIInitializer } from "../assets/scripts/ioc/init";
+import { GameState } from "../assets/scripts/services/gameState";
 
 describe("Test suite", () => {
     test("func test", () => {
-        ServicesInitializer.initialize();
+        DIInitializer.initialize();
         let s = getLogic();
         s.prepareGrid();
         expect(GameState.gridBlocks.length).toBeGreaterThan(0);

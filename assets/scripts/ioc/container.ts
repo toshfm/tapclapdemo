@@ -1,6 +1,6 @@
 
 interface IRegistration {
-    factory: () => any;
+    initial: () => any;
     instance?: any;
     scope: 'Singleton' | 'Transient'
 }
@@ -8,7 +8,7 @@ interface IRegistration {
 export class Container {
     private static instance: Container
     private services: Map<string, IRegistration> = new Map();
-    public initialized : boolean;
+    public initialized: boolean;
 
     static getInstance(): Container {
         if (!Container.instance) {
@@ -18,25 +18,25 @@ export class Container {
     }
 
     addSingleton<T, U extends T = T>(name: string, item: () => U): void {
-        this.services.set(name, {factory: item, scope: 'Singleton'});
+        this.services.set(name, { initial: item, scope: 'Singleton' });
     }
 
     addTransient<T, U extends T = T>(name: string, item: () => U): void {
-        this.services.set(name, {factory: item, scope: 'Transient'});
+        this.services.set(name, { initial: item, scope: 'Transient' });
     }
 
     resolve<T>(name: string): T {
         let service = this.services.get(name);
         if (!service) {
-             throw new Error(`Service not found: ${name}`);
+            throw new Error(`Service not found: ${name}`);
         }
 
         if (service.scope == 'Singleton') {
-            if (!service.instance) service.instance = service.factory();
+            if (!service.instance) service.instance = service.initial();
             return service.instance;
         }
-       
-        return service.factory(); 
+
+        return service.initial();
     }
 
     clear(): void {
