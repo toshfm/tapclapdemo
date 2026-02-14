@@ -1,7 +1,7 @@
 import { BombBlock } from "../blocks/BombBlock";
 import { NormalBlock } from "../blocks/NormalBlock";
-import { RocketHBlock } from "../blocks/RockethBlock";
-import { RocketVBlock } from "../blocks/RocketvBlock";
+import { RocketHBlock } from "../blocks/RocketHBlock";
+import { RocketVBlock } from "../blocks/RocketVBlock";
 import { BLOCK } from "../enums/block";
 import { IInteractedBlock } from "../interfaces/iInteractedBlock";
 import { IBlockInteractor } from "../interfaces/services/iBlockInteractor";
@@ -9,6 +9,7 @@ import { IBlockInteractor } from "../interfaces/services/iBlockInteractor";
 export class BlockInteractor implements IBlockInteractor {
     private _interactions: Map<BLOCK, IInteractedBlock> = new Map();
 
+    //**Set strategies to interact */
     constructor() {
         const normalBlock = new NormalBlock();
 

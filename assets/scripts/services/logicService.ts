@@ -4,6 +4,7 @@ import { MathHelper } from "../helpers/mathHelper";
 import { IGridElement } from "../interfaces/iGridElement";
 import { IInteractResponse, IInteractResponseChained } from "../interfaces/iInteractResponse";
 import { IBlockGenerator } from "../interfaces/services/iBlockGenerator";
+import { IBlockInteractor } from "../interfaces/services/iBlockInteractor";
 import { IGameSettings } from "../interfaces/services/iGameSettings";
 import { IGameState } from "../interfaces/services/iGameState";
 import { ILogicService } from "../interfaces/services/iLogicService";
@@ -15,12 +16,14 @@ export class LogicService implements ILogicService {
     settings: IGameSettings;
     state: IGameState;
     blockGenerator: IBlockGenerator
+    blockInteractor: IBlockInteractor
 
-    constructor(settings: IGameSettings, state: IGameState, blockGenerator: IBlockGenerator) {
+    constructor(settings: IGameSettings, state: IGameState, blockGenerator: IBlockGenerator, blockInteractor: IBlockInteractor) {
         _ = this;
         _.settings = settings;
         _.state = state;
         _.blockGenerator = blockGenerator;
+        _.blockInteractor = blockInteractor;
     }
 
     prepareGrid() {
@@ -98,7 +101,7 @@ export class LogicService implements ILogicService {
      * @param gId id Of block
      * @param useBomb if we use Bomb booster
     */
-    interact(gId: string, useBomb?: boolean): IInteractResponse {
+    interact1(gId: string, useBomb?: boolean): IInteractResponse {
         let response: IInteractResponse = {
             blocks: new Set<string>(),
             boosters: new Set<string>(), moveSuccess: false
@@ -106,6 +109,79 @@ export class LogicService implements ILogicService {
         let gridEl = _.state.getGridBlockById(gId);
         if (gridEl) {
             let booster = _.isBonus(gId);
+            if (booster || useBomb) {
+                //bonuses interaction
+                (response as IInteractResponseChained).chain = new Queue<string>();
+                (response as IInteractResponseChained).chain.enqueue(gId);
+                let firstTry = true;
+                while ((response as IInteractResponseChained).chain.count() > 0) {
+                    let el = (response as IInteractResponseChained).chain.dequeue();
+                    let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
+                    if (gEl) {
+                        if (_.isBonus(gEl.id)) {
+                            response.boosters.add(el);
+                        } else {
+                            _.addBlockToResponse(el, response);
+                        }
+                        if (gEl.block === BLOCK.bomb || (firstTry && useBomb)) {
+                            _.bomb(gEl, response);
+                        } else if (gEl.block === BLOCK.rocketh || (firstTry && useBomb)) {
+                            _.rocketH(gEl, response);
+                        } else if (gEl.block === BLOCK.rocketv || (firstTry && useBomb)) {
+                            _.rocketV(gEl, response);
+                        } else {
+                            throw new Error('no booster')
+                        }
+                        _.state.setGridBlock(gEl.row, gEl.col, null);
+                    }
+                    firstTry = false;
+                }
+            } else {
+                response.blocks.add(gridEl.id);
+                //search sim algo
+                let queue = new Queue<string>();
+                queue.enqueue(gId);
+                while (queue.count() > 0) {
+                    let levelSize = queue.count();
+                    for (let i = 0; i < levelSize; i++) {
+                        let blockEl = _.state.getGridBlockById(queue.dequeue());
+                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col - 1), blockEl, response, queue);
+                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row + 1, blockEl.col), blockEl, response, queue);
+                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col + 1), blockEl, response, queue);
+                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row - 1, blockEl.col), blockEl, response, queue);
+                    }
+                }
+            }
+            response.moveSuccess = response.blocks.size > 1 || response.boosters.size >= 1;
+            _.processResponse(response);
+            return response
+        } else {
+            return null;
+        }
+    }
+
+    interact(gId: string, useBomb?: boolean): IInteractResponse {
+        let response: IInteractResponse = {
+            blocks: new Set<string>(),
+            boosters: new Set<string>(), moveSuccess: false
+        }
+        let gridEl = _.state.getGridBlockById(gId);
+        if (gridEl) {
+            (response as IInteractResponseChained).chain = new Queue<string>();
+            (response as IInteractResponseChained).chain.enqueue(gId);
+            let firstTry = true;
+
+            while((response as IInteractResponseChained).chain.count() > 0) {
+                let el = (response as IInteractResponseChained).chain.dequeue();
+                let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
+                if (gEl) {
+                    let strategy = _.blockInteractor.getInteraction(gEl.block);
+                    let affected = strategy.interact(gEl, _.state);
+                }
+            }
+
+
+            // let booster = _.isBonus(gId);
             if (booster || useBomb) {
                 //bonuses interaction
                 (response as IInteractResponseChained).chain = new Queue<string>();

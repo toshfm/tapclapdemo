@@ -3,7 +3,6 @@ export interface IUiUtils {
     addLock(): void;
     removeLock(): void;
     nextScene(sceneName: string): void;
-    onSceneLaunched(): void;
     createNode<T extends cc.Prefab | cc.SpriteFrame>(item: T, pos?: { x: number, y: number }, parent?: cc.Node, zIndex?: number, spriteFrameForPrefab?: cc.SpriteFrame): cc.Node;
     toPosition(node: cc.Node, nodePosition: cc.Node, time: number): Promise<void>;
     toPositionXY(node: cc.Node, x: number, y: number, time: number): Promise<void>;

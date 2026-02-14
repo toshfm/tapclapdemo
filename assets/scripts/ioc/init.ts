@@ -18,7 +18,7 @@ export class DIInitializer {
     static initialize(): void {
         if (!DI.initialized) {
             DI.addSingleton<ILogicService, LogicService>(SERVICE.LogicService, () => new LogicService(
-                getSettings(), getState(), getBlockGenerator()
+                getSettings(), getState(), getBlockGenerator(), getBlockInteractor()
             ));
             DI.addSingleton<IGameSettings, GameSettings>(SERVICE.GameSettings, () => new GameSettings());
             DI.addSingleton<IGameState, GameState>(SERVICE.GameState, () => new GameState());

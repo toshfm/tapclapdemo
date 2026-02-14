@@ -50,7 +50,7 @@ export class UiUtils implements IUiUtils {
         }
     }
 
-    onSceneLaunched() {
+    private onSceneLaunched() {
         cc.log('scene launched');
         let transistor = cc.find('PersistNode/Transistor')!;
         cc.tween(transistor)
