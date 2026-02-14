@@ -1,10 +1,9 @@
-import { BLOCK } from "../../enums/block";
+import { BOOSTER } from "../../enums/booster";
 import { IInteractResponse } from "../iInteractResponse";
 
 export interface ILogicService {
-    prepareGrid() : void;
-    isBonus(id: string): BLOCK | null;
-    interact(id: string, useBomb?: boolean): IInteractResponse;
-    reshuffle();
+    newLevel() : void;
+    handleBlockClick(id: string): IInteractResponse;
+    handleBoosterClick(booster: BOOSTER): void;
 }
 

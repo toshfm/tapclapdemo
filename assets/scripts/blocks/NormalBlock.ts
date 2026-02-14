@@ -4,7 +4,7 @@ import { IGameState } from "../interfaces/services/iGameState";
 import { Queue } from "../misc/queue";
 
 export class NormalBlock implements IInteractedBlock {
-    interact(gridEl: IGridElement, state: IGameState) {
+    interact(gridEl: IGridElement, state: IGameState): Array<IGridElement> {
         let result = new Array<IGridElement>;
         result.push(gridEl);
         //search sim algo

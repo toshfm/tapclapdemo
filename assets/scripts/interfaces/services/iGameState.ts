@@ -1,3 +1,4 @@
+import { BOOSTER } from "../../enums/booster";
 import { IGridElement } from "../iGridElement";
 import { IPoint } from "../iPoint";
 
@@ -23,6 +24,7 @@ export interface IGameState {
     getBoosterReshuffle(): number;
     setBoosterBomb(value: number): void;
     getBoosterBomb(): number;
-    setBoosterBombActivated(value: boolean);
-    getBoosterBombActivated(): boolean;
+    toggleActiveBooster(value: BOOSTER | null): void;
+    getActiveBooster(): BOOSTER | null;
+
 }

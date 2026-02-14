@@ -1,8 +1,18 @@
+import { BOOSTER } from "../enums/booster";
 import { IGridElement } from "../interfaces/iGridElement";
 import { IPoint } from "../interfaces/iPoint";
 import { IGameState } from "../interfaces/services/iGameState";
+import { Observable } from "../misc/observable";
 
-export class GameState implements IGameState {
+export enum GameEventType {
+    POINTS_CHANGED = "POINTS_CHANGED",
+    MOVES_CHANGED = "MOVES_CHANGED",
+    BOOSTER_STATE_CHANGED = "BOOSTER_STATE_CHANGED",
+    BOOSTER_BOMB_QANTITY_CHANGED = "BOOSTER_BOMB_QANTITY_CHANGED",
+    BOOSTER_RESHUFFLE_QANTITY_CHANGED = "BOOSTER_RESHUFFLE_QANTITY_CHANGED"
+}
+
+export class GameState extends Observable implements IGameState {
     private _gridPoints: (IPoint | null)[][];
     private _gridBlocks: (IGridElement | null)[][];
     private _moves: number;
@@ -10,7 +20,7 @@ export class GameState implements IGameState {
     private _reshuffleTries: number;
     private _boosterReshuffle: number;
     private _boosterBomb: number;
-    private _boosterBombActivated: boolean;
+    private _activeBooster: BOOSTER | null = null;
 
     initGridPoints(rows: number, cols: number): void {
         this._gridPoints = Array(rows).fill(null).map(() => Array(cols).fill(null));
@@ -60,10 +70,14 @@ export class GameState implements IGameState {
 
     setMoves(value) {
         this._moves = value < 0 ? 0 : value;
+        this.notify({
+            type: GameEventType.MOVES_CHANGED,
+            data: this._moves
+        })
     }
 
     minusMove(): void {
-        this._moves--;
+        this.setMoves(this._moves-1)
     }
 
     getMoves() {
@@ -72,12 +86,18 @@ export class GameState implements IGameState {
 
     setCollectedPoints(value) {
         this._collectedPoints = value;
+        this.notify({
+            type: GameEventType.POINTS_CHANGED,
+            data: this._collectedPoints
+        })
     }
 
     addCollectedPoins(value?) {
-        this._collectedPoints = value !== undefined && value !== null 
-        ? this._collectedPoints + value 
-        : this._collectedPoints + 1;
+        if(value !== undefined && value !== null) {  
+            this.setCollectedPoints(this._collectedPoints + value) 
+        } else {
+            this.setCollectedPoints(this._collectedPoints + 1);
+        }
     }
 
     getCollectedPoints() {
@@ -108,11 +128,16 @@ export class GameState implements IGameState {
         return this._boosterBomb;
     }
 
-    setBoosterBombActivated(value) {
-        this._boosterBombActivated = value;
+    toggleActiveBooster(value) {
+        this._activeBooster = value;
+        this.notify({
+            type: GameEventType.BOOSTER_STATE_CHANGED,
+            data: value
+        })
+        
     }
 
-    getBoosterBombActivated() {
-        return this._boosterBombActivated;
+    getActiveBooster() {
+        return this._activeBooster;
     }
 }

@@ -1,5 +1,5 @@
-import { BLOCK } from "../enums/block";
 import { BLOCKTYPE } from "../enums/blockType";
+import { BOOSTER } from "../enums/booster";
 import { MathHelper } from "../helpers/mathHelper";
 import { IGridElement } from "../interfaces/iGridElement";
 import { IInteractResponse, IInteractResponseChained } from "../interfaces/iInteractResponse";
@@ -26,7 +26,8 @@ export class LogicService implements ILogicService {
         _.blockInteractor = blockInteractor;
     }
 
-    prepareGrid() {
+    newLevel() {
+        _.state.toggleActiveBooster(null);
         _.setGrid();
         _.fillGrid();
     }
@@ -65,6 +66,18 @@ export class LogicService implements ILogicService {
         }
     }
 
+    handleBoosterClick(booster: BOOSTER) {
+        switch(booster) {
+            case BOOSTER.reshuffle:
+                _.reshuffle();
+                break;
+            case BOOSTER.superbomb:
+                _.state.toggleActiveBooster(BOOSTER.superbomb);
+                break;
+            default: return;
+        }
+    }
+
     /**Reshuffle blocks*/
     reshuffle() {
         let arr: IGridElement[] = [];
@@ -87,151 +100,146 @@ export class LogicService implements ILogicService {
         }
     }
 
-    isBonus(gId: string): BLOCK | null {
-        let gridEl = _.state.getGridBlockById(gId)
-        if (gridEl.blockType == BLOCKTYPE.bonus) {
-            return gridEl.block
-        }
-        return null;
-    }
+    // isBonus(gId: string): BLOCK | null {
+    //     let gridEl = _.state.getGridBlockById(gId)
+    //     if (gridEl.blockType == BLOCKTYPE.bonus) {
+    //         return gridEl.block
+    //     }
+    //     return null;
+    // }
 
     /**Interact with block
      * booster, bomb or check similar 
      * TODO: Could be refactor into small pieces
      * @param gId id Of block
      * @param useBomb if we use Bomb booster
-    */
-    interact1(gId: string, useBomb?: boolean): IInteractResponse {
-        let response: IInteractResponse = {
-            blocks: new Set<string>(),
-            boosters: new Set<string>(), moveSuccess: false
-        }
-        let gridEl = _.state.getGridBlockById(gId);
-        if (gridEl) {
-            let booster = _.isBonus(gId);
-            if (booster || useBomb) {
-                //bonuses interaction
-                (response as IInteractResponseChained).chain = new Queue<string>();
-                (response as IInteractResponseChained).chain.enqueue(gId);
-                let firstTry = true;
-                while ((response as IInteractResponseChained).chain.count() > 0) {
-                    let el = (response as IInteractResponseChained).chain.dequeue();
-                    let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
-                    if (gEl) {
-                        if (_.isBonus(gEl.id)) {
-                            response.boosters.add(el);
-                        } else {
-                            _.addBlockToResponse(el, response);
-                        }
-                        if (gEl.block === BLOCK.bomb || (firstTry && useBomb)) {
-                            _.bomb(gEl, response);
-                        } else if (gEl.block === BLOCK.rocketh || (firstTry && useBomb)) {
-                            _.rocketH(gEl, response);
-                        } else if (gEl.block === BLOCK.rocketv || (firstTry && useBomb)) {
-                            _.rocketV(gEl, response);
-                        } else {
-                            throw new Error('no booster')
-                        }
-                        _.state.setGridBlock(gEl.row, gEl.col, null);
-                    }
-                    firstTry = false;
-                }
-            } else {
-                response.blocks.add(gridEl.id);
-                //search sim algo
-                let queue = new Queue<string>();
-                queue.enqueue(gId);
-                while (queue.count() > 0) {
-                    let levelSize = queue.count();
-                    for (let i = 0; i < levelSize; i++) {
-                        let blockEl = _.state.getGridBlockById(queue.dequeue());
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col - 1), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row + 1, blockEl.col), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col + 1), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row - 1, blockEl.col), blockEl, response, queue);
-                    }
-                }
-            }
-            response.moveSuccess = response.blocks.size > 1 || response.boosters.size >= 1;
-            _.processResponse(response);
-            return response
-        } else {
-            return null;
-        }
-    }
+    // */
+    // interact1(gId: string, useBomb?: boolean): IInteractResponse {
+    //     let response: IInteractResponse = {
+    //         normalBlocks: new Set<string>(),
+    //         bonusBlocks: new Set<string>(), moveSuccess: false
+    //     }
+    //     let gridEl = _.state.getGridBlockById(gId);
+    //     if (gridEl) {
+    //         let booster = _.isBonus(gId);
+    //         if (booster || useBomb) {
+    //             //bonuses interaction
+    //             (response as IInteractResponseChained).chain = new Queue<string>();
+    //             (response as IInteractResponseChained).chain.enqueue(gId);
+    //             let firstTry = true;
+    //             while ((response as IInteractResponseChained).chain.count() > 0) {
+    //                 let el = (response as IInteractResponseChained).chain.dequeue();
+    //                 let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
+    //                 if (gEl) {
+    //                     if (_.isBonus(gEl.id)) {
+    //                         response.bonusBlocks.add(el);
+    //                     } else {
+    //                         _.addBlockToResponse(el, response);
+    //                     }
+    //                     if (gEl.block === BLOCK.bomb || (firstTry && useBomb)) {
+    //                         _.bomb(gEl, response);
+    //                     } else if (gEl.block === BLOCK.rocketh || (firstTry && useBomb)) {
+    //                         _.rocketH(gEl, response);
+    //                     } else if (gEl.block === BLOCK.rocketv || (firstTry && useBomb)) {
+    //                         _.rocketV(gEl, response);
+    //                     } else {
+    //                         throw new Error('no booster')
+    //                     }
+    //                     _.state.setGridBlock(gEl.row, gEl.col, null);
+    //                 }
+    //                 firstTry = false;
+    //             }
+    //         } else {
+    //             response.normalBlocks.add(gridEl.id);
+    //             //search sim algo
+    //             let queue = new Queue<string>();
+    //             queue.enqueue(gId);
+    //             while (queue.count() > 0) {
+    //                 let levelSize = queue.count();
+    //                 for (let i = 0; i < levelSize; i++) {
+    //                     let blockEl = _.state.getGridBlockById(queue.dequeue());
+    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col - 1), blockEl, response, queue);
+    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row + 1, blockEl.col), blockEl, response, queue);
+    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col + 1), blockEl, response, queue);
+    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row - 1, blockEl.col), blockEl, response, queue);
+    //                 }
+    //             }
+    //         }
+    //         response.moveSuccess = response.normalBlocks.size > 1 || response.bonusBlocks.size >= 1;
+    //         _.processResponse(response);
+    //         return response
+    //     } else {
+    //         return null;
+    //     }
+    // }
 
-    interact(gId: string, useBomb?: boolean): IInteractResponse {
+    handleBlockClick(gId: string): IInteractResponse {
         let response: IInteractResponse = {
-            blocks: new Set<string>(),
-            boosters: new Set<string>(), moveSuccess: false
+            normalBlocks: new Set<string>(),
+            bonusBlocks: new Set<string>(), moveSuccess: false
         }
         let gridEl = _.state.getGridBlockById(gId);
+        
         if (gridEl) {
             (response as IInteractResponseChained).chain = new Queue<string>();
-            (response as IInteractResponseChained).chain.enqueue(gId);
+            
             let firstTry = true;
+
+            let activeBooster = _.state.getActiveBooster();
+            if (activeBooster !== null) {
+                let strategy = _.blockInteractor.getBoosterInteraction(activeBooster);
+                let affected = strategy.interact(gridEl, _.state);
+                _.processAffectedBlocks(affected, response);
+            } else {
+                (response as IInteractResponseChained).chain.enqueue(gId);
+            }
 
             while((response as IInteractResponseChained).chain.count() > 0) {
                 let el = (response as IInteractResponseChained).chain.dequeue();
                 let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
+                _.processOne(gEl, response);
                 if (gEl) {
-                    let strategy = _.blockInteractor.getInteraction(gEl.block);
+                    let strategy = _.blockInteractor.getBlockInteraction(gEl.block);
                     let affected = strategy.interact(gEl, _.state);
+                    _.processAffectedBlocks(affected, response);
+                    _.state.setGridBlock(gEl.row, gEl.col, null);
                 }
+                firstTry = false;
             }
-
-
-            // let booster = _.isBonus(gId);
-            if (booster || useBomb) {
-                //bonuses interaction
-                (response as IInteractResponseChained).chain = new Queue<string>();
-                (response as IInteractResponseChained).chain.enqueue(gId);
-                let firstTry = true;
-                while ((response as IInteractResponseChained).chain.count() > 0) {
-                    let el = (response as IInteractResponseChained).chain.dequeue();
-                    let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
-                    if (gEl) {
-                        if (_.isBonus(gEl.id)) {
-                            response.boosters.add(el);
-                        } else {
-                            _.addBlockToResponse(el, response);
-                        }
-                        if (gEl.block === BLOCK.bomb || (firstTry && useBomb)) {
-                            _.bomb(gEl, response);
-                        } else if (gEl.block === BLOCK.rocketh || (firstTry && useBomb)) {
-                            _.rocketH(gEl, response);
-                        } else if (gEl.block === BLOCK.rocketv || (firstTry && useBomb)) {
-                            _.rocketV(gEl, response);
-                        } else {
-                            throw new Error('no booster')
-                        }
-                        _.state.setGridBlock(gEl.row, gEl.col, null);
-                    }
-                    firstTry = false;
-                }
-            } else {
-                response.blocks.add(gridEl.id);
-                //search sim algo
-                let queue = new Queue<string>();
-                queue.enqueue(gId);
-                while (queue.count() > 0) {
-                    let levelSize = queue.count();
-                    for (let i = 0; i < levelSize; i++) {
-                        let blockEl = _.state.getGridBlockById(queue.dequeue());
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col - 1), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row + 1, blockEl.col), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col + 1), blockEl, response, queue);
-                        _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row - 1, blockEl.col), blockEl, response, queue);
-                    }
-                }
-            }
-            response.moveSuccess = response.blocks.size > 1 || response.boosters.size >= 1;
+            response.moveSuccess = response.normalBlocks.size > 1 || response.bonusBlocks.size >= 1;
             _.processResponse(response);
             return response
         } else {
             return null;
         }
     }
+
+    private processOne(block: IGridElement, response: IInteractResponse) {
+        if (block?.blockType == BLOCKTYPE.bonus) {
+            response.bonusBlocks.add(block.id);
+        } else if (block?.blockType == BLOCKTYPE.normal) {
+            response.normalBlocks.add(block.id);
+        }
+    }
+
+    private processAffectedBlocks(blocks: Array<IGridElement>, response: IInteractResponse){
+        blocks.forEach( block => 
+            {
+                _.processAffectedBlock(block, response);
+            }
+        );
+    }
+
+    private processAffectedBlock(block: IGridElement, response: IInteractResponse) {
+        if (block.blockType == BLOCKTYPE.bonus) {
+            if (!response.bonusBlocks.has(block.id)) {
+                (response as IInteractResponseChained).chain.enqueue(block.id)
+            }
+        } else {
+            response.normalBlocks.add(block.id);
+        }
+    }
+
 
     private processResponse(response: IInteractResponse) {
         if (response.moveSuccess) {
@@ -263,7 +271,7 @@ export class LogicService implements ILogicService {
     private destroyBlocks(response: IInteractResponse) {
         for (let row = 0; row < _.settings.getRows(); row++) {
             for (let col = 0; col < _.settings.getCols(); col++) {
-                if (response.blocks.has(_.state.getGridBlock(row,col)?.id)) {
+                if (response.normalBlocks.has(_.state.getGridBlock(row,col)?.id)) {
                     _.state.setGridBlock(row, col, null);
                 }
             }
@@ -271,61 +279,61 @@ export class LogicService implements ILogicService {
     }
 
     //add outer blocks
-    private bomb(block: IGridElement, response: IInteractResponse) {
-        let blocks = [];
-        blocks.push(_.state.getGridBlock(block.row, block.col - 1)?.id);
-        blocks.push(_.state.getGridBlock(block.row + 1, block.col - 1)?.id);
-        blocks.push(_.state.getGridBlock(block.row + 1, block.col)?.id);
-        blocks.push(_.state.getGridBlock(block.row + 1, block.col + 1)?.id);
-        blocks.push(_.state.getGridBlock(block.row, block.col + 1)?.id);
-        blocks.push(_.state.getGridBlock(block.row - 1, block.col + 1)?.id);
-        blocks.push(_.state.getGridBlock(block.row - 1, block.col)?.id);
-        blocks.push(_.state.getGridBlock(block.row - 1, block.col - 1)?.id);
-        (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-            _.addBlockToResponse(item, response)
-        )
-    }
+    // private bomb(block: IGridElement, response: IInteractResponse) {
+    //     let blocks = [];
+    //     blocks.push(_.state.getGridBlock(block.row, block.col - 1)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col - 1)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col + 1)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row, block.col + 1)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col + 1)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col)?.id);
+    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col - 1)?.id);
+    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
+    //         _.addBlockToResponse(item, response)
+    //     )
+    // }
 
-    //add horizontal 
-    private rocketH(block: IGridElement, response: IInteractResponse) {
-        let blocks = [];
-        for (let col = 0; col < _.settings.getCols(); col++) {
-            blocks.push(_.state.getGridBlock(block.row, col)?.id);
-        }
-        (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-            _.addBlockToResponse(item, response)
-        )
-    }
+    // //add horizontal 
+    // private rocketH(block: IGridElement, response: IInteractResponse) {
+    //     let blocks = [];
+    //     for (let col = 0; col < _.settings.getCols(); col++) {
+    //         blocks.push(_.state.getGridBlock(block.row, col)?.id);
+    //     }
+    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
+    //         _.addBlockToResponse(item, response)
+    //     )
+    // }
 
-    //add vertical
-    private rocketV(block: IGridElement, response: IInteractResponse) {
-        let blocks = [];
-        for (let row = 0; row < _.settings.getRows(); row++) {
-            blocks.push(_.state.getGridBlock(row, block.col)?.id);
-        }
-        (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-            _.addBlockToResponse(item, response)
-        )
-    }
+    // //add vertical
+    // private rocketV(block: IGridElement, response: IInteractResponse) {
+    //     let blocks = [];
+    //     for (let row = 0; row < _.settings.getRows(); row++) {
+    //         blocks.push(_.state.getGridBlock(row, block.col)?.id);
+    //     }
+    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
+    //         _.addBlockToResponse(item, response)
+    //     )
+    // }
 
-    private addBlockToResponse(id: string, response: IInteractResponse) {
-        if (_.isBonus(id)) {
-            if (!response.boosters.has(id)) {
-                (response as IInteractResponseChained).chain.enqueue(id)
-            }
-        } else {
-            response.blocks.add(id);
-        }
-    }
+    // private addBlockToResponse(id: string, response: IInteractResponse) {
+    //     if (_.isBonus(id)) {
+    //         if (!response.bonusBlocks.has(id)) {
+    //             (response as IInteractResponseChained).chain.enqueue(id)
+    //         }
+    //     } else {
+    //         response.normalBlocks.add(id);
+    //     }
+    // }
 
-    private checkAndAddSimilar(blockToCheck: IGridElement, blockTwo: IGridElement, response: IInteractResponse, resultQueue: Queue<string>) {
-        if (blockToCheck?.block === blockTwo?.block) {
-            if (!response.blocks.has(blockToCheck.id)) {
-                response.blocks.add(blockToCheck.id);
-                resultQueue.enqueue(blockToCheck.id);
-            }
-        }
-    }
+    // private checkAndAddSimilar(blockToCheck: IGridElement, blockTwo: IGridElement, response: IInteractResponse, resultQueue: Queue<string>) {
+    //     if (blockToCheck?.block === blockTwo?.block) {
+    //         if (!response.normalBlocks.has(blockToCheck.id)) {
+    //             response.normalBlocks.add(blockToCheck.id);
+    //             resultQueue.enqueue(blockToCheck.id);
+    //         }
+    //     }
+    // }
 
     //For testing purposes
     private translate(num: number) {

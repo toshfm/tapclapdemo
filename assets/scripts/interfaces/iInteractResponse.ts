@@ -1,8 +1,8 @@
 import { IQueue } from "./iQueue";
 
 export interface IInteractResponse {
-    blocks: Set<string>;
-    boosters: Set<string>;
+    normalBlocks: Set<string>;
+    bonusBlocks: Set<string>;
     moveSuccess: boolean;
 }
 

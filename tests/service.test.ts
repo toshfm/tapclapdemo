@@ -5,7 +5,7 @@ describe("Test suite", () => {
     test("func test", () => {
         DIInitializer.initialize();
         let s = getLogic();
-        s.prepareGrid();
+        s.newLevel();
         expect(GameState.gridBlocks.length).toBeGreaterThan(0);
     });
 });

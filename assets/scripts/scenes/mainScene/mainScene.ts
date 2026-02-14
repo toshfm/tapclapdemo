@@ -1,4 +1,5 @@
 import { BLOCK } from "../../enums/block";
+import { BOOSTER } from "../../enums/booster";
 import { ZINDEX } from "../../enums/zIndexes";
 import { MathHelper } from "../../helpers/mathHelper";
 import { IInteractResponse } from "../../interfaces/iInteractResponse";
@@ -98,12 +99,12 @@ export default class MainScene extends cc.Component {
     async start() {
         _.boosterReshuffle.on(cc.Node.EventType.TOUCH_START, () => {
             if (!_.ui.uiIsLocked()) {
-                _.reshuffle();
+                _.logic.handleBoosterClick(BOOSTER.reshuffle)
             }
         });
         _.boosterBomb.on(cc.Node.EventType.TOUCH_START, () => {
             if (!_.ui.uiIsLocked()) {
-                _.boosterBombToggle();
+                _.logic.handleBoosterClick(BOOSTER.superbomb)
             }
         });
         _.settingsNode.on(cc.Node.EventType.TOUCH_START, () => {
@@ -127,7 +128,7 @@ export default class MainScene extends cc.Component {
 
     async startNewLevel() {
         _.ui.shadow(_.shadow, false);
-        _.logic.prepareGrid();
+        _.logic.newLevel();
         await _.prepareLevel();
         _.replay.position = cc.v3(0, -1300);
         _.winLoseLabel.position = cc.v3(0, 1300);
@@ -168,7 +169,6 @@ export default class MainScene extends cc.Component {
         _.updatePoints();
         _.ui.setText(_.boosterReshuffleLabel, _.settings.getStartedBoosterReshuffle());
         _.ui.setText(_.boosterBombLabel, _.settings.getStartedBoosterBomb());
-        _.setBoosterActivated(false);
     }
 
     fillGridWithBlocks() {
@@ -179,40 +179,41 @@ export default class MainScene extends cc.Component {
         }
     }
 
-    boosterBombToggle() {
-        if (_.state.getBoosterBomb() <= 0 && !_.state.getBoosterBombActivated()) {
-            return;
-        }
-        _.setBoosterActivated(!_.state.getBoosterBombActivated());
+    // boosterBombToggle() {
+    //     let currentStatus = _.state.getActiveBooster(); 
+    //     if (_.state.getBoosterBomb() <= 0) {
+    //         return;
+    //     }
+    //     _.setBoosterBombActivated(!_.state.getActiveBooster());
 
-    }
+    // }
 
-    setBoosterActivated(status: boolean) {
-        _.state.setBoosterBombActivated(status);
-        _.boosterBomb.color = status ? cc.Color.YELLOW : cc.Color.WHITE
-    }
+    // setBoosterBombActivated(status: boolean) {
+    //     _.state.setActiveBooster(BOOSTER.superbomb);
+    //     _.boosterBomb.color = status ? cc.Color.YELLOW : cc.Color.WHITE
+    // }
 
-    reshuffle() {
-        if (_.state.getBoosterReshuffle() <= 0) {
-            return;
-        }
-        _.ui.addLock();
-        _.ui.blink(_.boosterReshuffle);
-        _.logic.reshuffle();
-        let promises: Promise<void>[] = [];
-        for (let col = 0; col < _.settings.getCols(); col++) {
-            for (let row = 0; row < _.settings.getRows(); row++) {
-                let block = _.blocksOnStage.get(_.state.getGridBlock(row,col).id)
-                if (block) {
-                    promises.push(_.ui.toPositionXY(block, _.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y, 0.5));
-                }
-            }
-        }
-        Promise.all(promises);
-        _.state.setBoosterReshuffle(_.state.getBoosterReshuffle()-1);
-        _.ui.setText(_.boosterReshuffleLabel, _.state.getBoosterReshuffle());
-        _.ui.removeLock();
-    }
+    // reshuffle() {
+    //     if (_.state.getBoosterReshuffle() <= 0) {
+    //         return;
+    //     }
+    //     _.ui.addLock();
+    //     _.ui.blink(_.boosterReshuffle);
+    //     _.logic.reshuffle();
+    //     let promises: Promise<void>[] = [];
+    //     for (let col = 0; col < _.settings.getCols(); col++) {
+    //         for (let row = 0; row < _.settings.getRows(); row++) {
+    //             let block = _.blocksOnStage.get(_.state.getGridBlock(row,col).id)
+    //             if (block) {
+    //                 promises.push(_.ui.toPositionXY(block, _.state.getGridPoint(row,col).x, _.state.getGridPoint(row,col).y, 0.5));
+    //             }
+    //         }
+    //     }
+    //     Promise.all(promises);
+    //     _.state.setBoosterReshuffle(_.state.getBoosterReshuffle()-1);
+    //     _.ui.setText(_.boosterReshuffleLabel, _.state.getBoosterReshuffle());
+    //     _.ui.removeLock();
+    // }
 
     /**
      * Touch the block on Stage
@@ -225,17 +226,17 @@ export default class MainScene extends cc.Component {
             _.ui.addLock();
             let response: IInteractResponse;
             //Check status of bomb bonus activity
-            if (_.state.getBoosterBombActivated()) {
+            if (_.state.getActiveBooster()) {
                 _.state.setBoosterBomb(_.state.getBoosterBomb()-1);
                 _.ui.setText(_.boosterBombLabel, _.state.getBoosterBomb());
                 _.boosterBombToggle();
-                response = _.logic.interact((block as INode).gId, true);
+                response = _.logic.handleBlockClick((block as INode).gId);
                 _.boomClip(block);
             } else {
-                response = _.logic.interact((block as INode).gId);
+                response = _.logic.handleBlockClick((block as INode).gId);
             }
             //Process Response from logic
-            response.boosters?.forEach(booster => {
+            response.bonusBlocks?.forEach(booster => {
                 let el = _.blocksOnStage.get(booster)
                 if ((el as INode).gTag === 'bomb') {
                     _.boomClip(el);
@@ -251,7 +252,7 @@ export default class MainScene extends cc.Component {
                 _.ui.blink(_.movesBackground);
                 _.ui.pulse(_.movesLabel);
                 _.updateMoves();
-                await _.processBlocks(response.blocks);
+                await _.processBlocks(response.normalBlocks);
                 return (true);
             } else {
                 _.ui.pulse(block);
