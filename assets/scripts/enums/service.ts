@@ -4,5 +4,7 @@ export enum SERVICE {
     GameState = 'GameState',
     UI = 'UI',
     BlockGenerator = 'BlockGenerator',
-    BlockInteractor = 'BlockInteractor'
+    BlockInteractor = 'BlockInteractor',
+    Events = 'EventEmitter',
+    GridView = 'GridView'
 }

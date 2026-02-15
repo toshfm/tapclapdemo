@@ -1,9 +1,8 @@
 import { BOOSTER } from "../../enums/booster";
-import { IInteractResponse } from "../iInteractResponse";
 
 export interface ILogicService {
-    newLevel() : void;
-    handleBlockClick(id: string): IInteractResponse;
+    newLevel(): void;
+    handleBlockClick(id: string): void;
     handleBoosterClick(booster: BOOSTER): void;
 }
 
