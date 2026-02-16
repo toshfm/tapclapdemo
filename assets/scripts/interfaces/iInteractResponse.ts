@@ -1,3 +1,4 @@
+import { IMove } from "./iMove";
 import { IQueue } from "./iQueue";
 
 export interface IInteractResponse {

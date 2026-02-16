@@ -38,7 +38,7 @@ export class LogicService implements ILogicService {
         _.clearState();
         const gridIsReady = new Promise<void>((resolve) => {
             const unsub = _.events.on(GAMEEVENT.GRID_PREPARED, () => {
-                unsub(); 
+                unsub();
                 resolve();
             });
         });
@@ -47,7 +47,7 @@ export class LogicService implements ILogicService {
         _.fillGrid();
     }
 
-    clearState(){
+    clearState() {
         _.state.toggleActiveBooster(null);
         _.state.setCollectedPoints(0);
         _.state.setMoves(_.settings.getStartedMoves());
@@ -65,10 +65,7 @@ export class LogicService implements ILogicService {
                 let newBlock = _.state.setGridBlock(row, col, {
                     ..._.blockGenerator.newBlock(),
                     row: row,
-                    col: col,
-                    above: 0
-                    //isNew: false,
-                    //isMoved: false
+                    col: col
                 });
                 _.events.emit(GAMEEVENT.BLOCK_CREATED, newBlock);
             }
@@ -91,7 +88,20 @@ export class LogicService implements ILogicService {
         }
     }
 
-    reshuffle() : Array<IMove> {
+    addCollectedPoints(blockType?: string) {
+        //could be logic to add differents points depends on blockType
+        _.state.addCollectedPoins();
+    }
+
+    checkWinLose() {
+        if (_.state.getCollectedPoints() > _.settings.getTargetPoints()) {
+            _.events.emit(GAMEEVENT.WIN);
+        } else if (_.state.getMoves() == 0) {
+            _.events.emit(GAMEEVENT.LOSE);
+        }
+    }
+
+    reshuffle(): Array<IMove> {
         let result: IMove[] = []
         let arr: IGridElement[] = [];
         let rows = _.settings.getRows();
@@ -105,7 +115,7 @@ export class LogicService implements ILogicService {
         let i = 0;
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                if(arr[i].col != col || arr[i].row != row) {
+                if (arr[i].col != col || arr[i].row != row) {
                     result.push({
                         id: arr[i].id,
                         row: row,
@@ -121,84 +131,12 @@ export class LogicService implements ILogicService {
         return result;
     }
 
-    // isBonus(gId: string): BLOCK | null {
-    //     let gridEl = _.state.getGridBlockById(gId)
-    //     if (gridEl.blockType == BLOCKTYPE.bonus) {
-    //         return gridEl.block
-    //     }
-    //     return null;
-    // }
-
-    /**Interact with block
-     * booster, bomb or check similar 
-     * TODO: Could be refactor into small pieces
-     * @param gId id Of block
-     * @param useBomb if we use Bomb booster
-    // */
-    // interact1(gId: string, useBomb?: boolean): IInteractResponse {
-    //     let response: IInteractResponse = {
-    //         normalBlocks: new Set<string>(),
-    //         bonusBlocks: new Set<string>(), moveSuccess: false
-    //     }
-    //     let gridEl = _.state.getGridBlockById(gId);
-    //     if (gridEl) {
-    //         let booster = _.isBonus(gId);
-    //         if (booster || useBomb) {
-    //             //bonuses interaction
-    //             (response as IInteractResponseChained).chain = new Queue<string>();
-    //             (response as IInteractResponseChained).chain.enqueue(gId);
-    //             let firstTry = true;
-    //             while ((response as IInteractResponseChained).chain.count() > 0) {
-    //                 let el = (response as IInteractResponseChained).chain.dequeue();
-    //                 let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
-    //                 if (gEl) {
-    //                     if (_.isBonus(gEl.id)) {
-    //                         response.bonusBlocks.add(el);
-    //                     } else {
-    //                         _.addBlockToResponse(el, response);
-    //                     }
-    //                     if (gEl.block === BLOCK.bomb || (firstTry && useBomb)) {
-    //                         _.bomb(gEl, response);
-    //                     } else if (gEl.block === BLOCK.rocketh || (firstTry && useBomb)) {
-    //                         _.rocketH(gEl, response);
-    //                     } else if (gEl.block === BLOCK.rocketv || (firstTry && useBomb)) {
-    //                         _.rocketV(gEl, response);
-    //                     } else {
-    //                         throw new Error('no booster')
-    //                     }
-    //                     _.state.setGridBlock(gEl.row, gEl.col, null);
-    //                 }
-    //                 firstTry = false;
-    //             }
-    //         } else {
-    //             response.normalBlocks.add(gridEl.id);
-    //             //search sim algo
-    //             let queue = new Queue<string>();
-    //             queue.enqueue(gId);
-    //             while (queue.count() > 0) {
-    //                 let levelSize = queue.count();
-    //                 for (let i = 0; i < levelSize; i++) {
-    //                     let blockEl = _.state.getGridBlockById(queue.dequeue());
-    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col - 1), blockEl, response, queue);
-    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row + 1, blockEl.col), blockEl, response, queue);
-    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row, blockEl.col + 1), blockEl, response, queue);
-    //                     _.checkAndAddSimilar(_.state.getGridBlock(blockEl.row - 1, blockEl.col), blockEl, response, queue);
-    //                 }
-    //             }
-    //         }
-    //         response.moveSuccess = response.normalBlocks.size > 1 || response.bonusBlocks.size >= 1;
-    //         _.processResponse(response);
-    //         return response
-    //     } else {
-    //         return null;
-    //     }
-    // }
 
     handleBlockClick(gId: string) {
         let response: IInteractResponse = {
             interactedBlockId: gId,
             normalBlocks: new Set<string>(),
-            bonusBlocks: new Set<string>(), 
+            bonusBlocks: new Set<string>(),
             moveSuccess: false
         }
         let gridEl = _.state.getGridBlockById(gId);
@@ -229,13 +167,16 @@ export class LogicService implements ILogicService {
                     let strategy = _.blockInteractor.getBlockInteraction(gEl.block);
                     let affected = strategy.interact(gEl, _.state, _.events);
                     _.processAffectedBlocks(affected, response);
-                    _.state.setGridBlock(gEl.row, gEl.col, null);
+                    if (gEl.blockType == BLOCKTYPE.bonus) {
+                        _.state.setGridBlock(gEl.row, gEl.col, null);
+                    }
                 }
                 firstTry = false;
             }
             response.moveSuccess = response.normalBlocks.size > 1 || response.bonusBlocks.size >= 1;
-            _.processResponse(response);
+            
             if (response.moveSuccess) {
+                _.processResponse(response);
                 _.state.minusMove();
             }
             _.events.emit(GAMEEVENT.BLOCK_CLICK_HAPPENED, response);
@@ -255,8 +196,7 @@ export class LogicService implements ILogicService {
     private processAffectedBlocks(blocks: Array<IGridElement>, response: IInteractResponse) {
         blocks.forEach(block => {
             _.processAffectedBlock(block, response);
-        }
-        );
+        });
     }
 
     private processAffectedBlock(block: IGridElement, response: IInteractResponse) {
@@ -269,18 +209,18 @@ export class LogicService implements ILogicService {
         }
     }
 
-
     private processResponse(response: IInteractResponse) {
         if (response.moveSuccess) {
             _.destroyBlocks(response);
-            _.fillNewBlocks();
+            _.moveAndNewBlocks(response);
         }
 
     }
 
-    private fillNewBlocks() {
+    private moveAndNewBlocks(response: IInteractResponse) {
         let cols = _.settings.getCols();
         let rows = _.settings.getRows();
+        let moved = [];
         for (let col = 0; col < cols; col++) {
             let existed: IGridElement[] = [];
             for (let row = 0; row < rows; row++) {
@@ -289,11 +229,21 @@ export class LogicService implements ILogicService {
                 }
             }
             for (let row = 0; row < rows; row++) {
-                _.state.setGridBlock(row, col, existed[row]
-                    ? { ...existed[row], isMoved: (existed[row].row != row), row: row, isNew: false }
-                    : { ..._.blockGenerator.newBlock(), row: row, col: col, isNew: true, isMoved: false }
-                );
+                let above = 1;
+                if (existed[row]) {
+                    let block = { ...existed[row], row: row };
+                    _.state.setGridBlock(row, col, block)
+                    moved.push({ id: block.id, row: row, col:col });
+                } else {
+                    let block = { ..._.blockGenerator.newBlock(), row: row, col: col, above: above }
+                    _.state.setGridBlock(row, col, block);
+                    _.events.emit(GAMEEVENT.BLOCK_CREATED, block);
+                    above++;
+                }
             }
+        }
+        if (moved.length > 0) {
+            _.events.emit(GAMEEVENT.RESHUFFLE, moved);
         }
     }
 
@@ -307,63 +257,6 @@ export class LogicService implements ILogicService {
         }
     }
 
-    //add outer blocks
-    // private bomb(block: IGridElement, response: IInteractResponse) {
-    //     let blocks = [];
-    //     blocks.push(_.state.getGridBlock(block.row, block.col - 1)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col - 1)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row + 1, block.col + 1)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row, block.col + 1)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col + 1)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col)?.id);
-    //     blocks.push(_.state.getGridBlock(block.row - 1, block.col - 1)?.id);
-    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-    //         _.addBlockToResponse(item, response)
-    //     )
-    // }
-
-    // //add horizontal 
-    // private rocketH(block: IGridElement, response: IInteractResponse) {
-    //     let blocks = [];
-    //     for (let col = 0; col < _.settings.getCols(); col++) {
-    //         blocks.push(_.state.getGridBlock(block.row, col)?.id);
-    //     }
-    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-    //         _.addBlockToResponse(item, response)
-    //     )
-    // }
-
-    // //add vertical
-    // private rocketV(block: IGridElement, response: IInteractResponse) {
-    //     let blocks = [];
-    //     for (let row = 0; row < _.settings.getRows(); row++) {
-    //         blocks.push(_.state.getGridBlock(row, block.col)?.id);
-    //     }
-    //     (blocks.filter(x => x !== null && x !== undefined)).forEach(item =>
-    //         _.addBlockToResponse(item, response)
-    //     )
-    // }
-
-    // private addBlockToResponse(id: string, response: IInteractResponse) {
-    //     if (_.isBonus(id)) {
-    //         if (!response.bonusBlocks.has(id)) {
-    //             (response as IInteractResponseChained).chain.enqueue(id)
-    //         }
-    //     } else {
-    //         response.normalBlocks.add(id);
-    //     }
-    // }
-
-    // private checkAndAddSimilar(blockToCheck: IGridElement, blockTwo: IGridElement, response: IInteractResponse, resultQueue: Queue<string>) {
-    //     if (blockToCheck?.block === blockTwo?.block) {
-    //         if (!response.normalBlocks.has(blockToCheck.id)) {
-    //             response.normalBlocks.add(blockToCheck.id);
-    //             resultQueue.enqueue(blockToCheck.id);
-    //         }
-    //     }
-    // }
-
     //For testing purposes
     private translate(num: number) {
         cc.log('----' + num);
@@ -372,8 +265,8 @@ export class LogicService implements ILogicService {
                 cc.log(_.state.getGridBlock(row, 0).row
                     + ' ' + _.state.getGridBlock(row, 0).col
                     + ' ' + _.state.getGridBlock(row, 0).id
-                    // + ' ' + _.state.getGridBlock(row, 0).isMoved
-                    // + ' ' + _.state.getGridBlock(row, 0).isNew);
+                    + ' ' + _.state.getGridBlock(row, 0).above
+                    );
             } else {
                 cc.log(row + ' ' + 0 + ' ' + 'null');
             }
