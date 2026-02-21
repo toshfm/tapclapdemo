@@ -1,8 +1,6 @@
-import { ZINDEX } from "../enums/zIndexes";
-import { IUiUtils } from "../interfaces/services/iUiUtils";
+import { ZIndex } from "../enums/ZIndex";
+import { IUiUtils } from "../interfaces/services/IUiUtils";
 import PersistData from "../PersistData";
-
-let _: UiUtils;
 
 export class UiUtils implements IUiUtils {
     private _uilocked: boolean[] = [];
@@ -12,39 +10,38 @@ export class UiUtils implements IUiUtils {
     private _defaultEffectTime: number = 0.2;
 
     constructor() {
-        _ = this;
-        _._persistNode = cc.find('PersistNode');
-        cc.game.addPersistRootNode(_._persistNode);
-        let persistData = (_._persistNode.getComponent('PersistData') as PersistData);
-        _._sceneTransistor = persistData.sceneTransistor;
-        _._simpleSprite = persistData.simpleSprite;
+        this._persistNode = cc.find('PersistNode');
+        cc.game.addPersistRootNode(this._persistNode);
+        let persistData = (this._persistNode.getComponent('PersistData') as PersistData);
+        this._sceneTransistor = persistData.sceneTransistor;
+        this._simpleSprite = persistData.simpleSprite;
     }
 
     uiIsLocked(): boolean {
-        return _._uilocked.length > 0;
+        return this._uilocked.length > 0;
     }
 
     addLock() {
-        _._uilocked.push(true);
+        this._uilocked.push(true);
     }
 
     removeLock() {
-        _._uilocked.pop();
+        this._uilocked.pop();
     }
 
     nextScene(sceneName: string): void {
-        if (!_.uiIsLocked()) {
+        if (!this.uiIsLocked()) {
             cc.log('start transition')
-            _.addLock();
-            let tempTransistor = cc.instantiate(_._sceneTransistor)!;
+            this.addLock();
+            let tempTransistor = cc.instantiate(this._sceneTransistor)!;
             tempTransistor.opacity = 0;
-            tempTransistor.zIndex = ZINDEX.transistor
-            _._persistNode.addChild(tempTransistor)
+            tempTransistor.zIndex = ZIndex.transistor
+            this._persistNode.addChild(tempTransistor)
 
             cc.tween(tempTransistor)
-                .to(_._defaultEffectTime, { opacity: 255 })
+                .to(this._defaultEffectTime, { opacity: 255 })
                 .call(() => {
-                    cc.director.loadScene(sceneName, _.onSceneLaunched)
+                    cc.director.loadScene(sceneName, () => this.onSceneLaunched())
                 })
                 .start()
         }
@@ -54,10 +51,10 @@ export class UiUtils implements IUiUtils {
         cc.log('scene launched');
         let transistor = cc.find('PersistNode/Transistor')!;
         cc.tween(transistor)
-            .to(_._defaultEffectTime, { opacity: 0 })
+            .to(this._defaultEffectTime, { opacity: 0 })
             .call(() => {
-                _.removeLock();
-                _._persistNode.removeChild(transistor)
+                this.removeLock();
+                this._persistNode.removeChild(transistor)
             })
             .start()
     }
@@ -70,7 +67,7 @@ export class UiUtils implements IUiUtils {
                 result.getComponent(cc.Sprite).spriteFrame = spriteFrameForPrefab;
             }
         } else if (item instanceof cc.SpriteFrame) {
-            result = cc.instantiate(_._simpleSprite);
+            result = cc.instantiate(this._simpleSprite);
             result.getComponent(cc.Sprite)!.spriteFrame = item;
         }
         if (parent) {
@@ -82,12 +79,12 @@ export class UiUtils implements IUiUtils {
         if (pos) {
             result.setPosition(pos.x, pos.y);
         }
-        result.zIndex = zIndex ?? ZINDEX.default;
+        result.zIndex = zIndex ?? ZIndex.default;
         return result;
     }
 
-    async toPosition(node: cc.Node, nodePosition: cc.Node, time: number = _._defaultEffectTime): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+    async toPosition(node: cc.Node, nodePosition: cc.Node, time: number = this._defaultEffectTime): Promise<void> {
+        return new Promise<void>((resolve) => {
             cc.tween(node)
                 .to(time, { position: cc.v3(nodePosition?.getPosition()) }, { easing: 'fade' })
                 .call(() => resolve())
@@ -95,8 +92,8 @@ export class UiUtils implements IUiUtils {
         })
     }
 
-    async toPositionXY(node: cc.Node, x: number, y: number, time: number = _._defaultEffectTime): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+    async toPositionXY(node: cc.Node, x: number, y: number, time: number = this._defaultEffectTime): Promise<void> {
+        return new Promise<void>((resolve) => {
             cc.tween(node)
                 .to(time, { position: cc.v3(x, y, 0) }, { easing: 'backOut' })
                 .call(() => resolve())
@@ -110,7 +107,7 @@ export class UiUtils implements IUiUtils {
 
     async blink(node: cc.Node) {
         node.color = cc.Color.YELLOW;
-        await _.sleep(200);
+        await this.sleep(200);
         node.color = cc.Color.WHITE;
     }
 
@@ -121,11 +118,11 @@ export class UiUtils implements IUiUtils {
     }
 
     async pulse(node: cc.Node) {
-        await _.tweenScale(node, 1.1, 0.1);
-        await _.tweenScale(node, 1, 0.1);
+        await this.tweenScale(node, 1.1, 0.1);
+        await this.tweenScale(node, 1, 0.1);
     }
 
-    tweenScale(node: cc.Node, num: number, duration: number = _._defaultEffectTime): Promise<void> {
+    tweenScale(node: cc.Node, num: number, duration: number = this._defaultEffectTime): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             cc.tween(node)
                 .to(duration, { scale: num }, { easing: 'fade' })
@@ -140,7 +137,7 @@ export class UiUtils implements IUiUtils {
 
     hoverButton(node: cc.Node) {
         node.on(cc.Node.EventType.MOUSE_ENTER, async () => {
-            if (!_.uiIsLocked()) {
+            if (!this.uiIsLocked()) {
                 cc.tween(node)
                     .to(0.15, { scale: 1.1 }, { easing: 'backOut' })
                     .start();
@@ -148,7 +145,7 @@ export class UiUtils implements IUiUtils {
         });
 
         node.on(cc.Node.EventType.MOUSE_LEAVE, async () => {
-            if (!_.uiIsLocked()) {
+            if (!this.uiIsLocked()) {
                 cc.tween(node)
                     .to(0.15, { scale: 1 }, { easing: 'backOut' })
                     .start();
@@ -158,19 +155,19 @@ export class UiUtils implements IUiUtils {
 
     /**Shadow screen */
     shadow(node: cc.Node, isOn: boolean) {
-        _.addLock()
+        this.addLock()
         if (isOn) {
             node.addComponent(cc.BlockInputEvents);
             cc.tween(node)
-                .to(_._defaultEffectTime, { opacity: 200 }, { easing: 'fade' })
-                .call(() => _.removeLock())
+                .to(this._defaultEffectTime, { opacity: 200 }, { easing: 'fade' })
+                .call(() => this.removeLock())
                 .start();
 
         } else {
             cc.tween(node)
-                .to(_._defaultEffectTime, { opacity: 0 }, { easing: 'fade' })
+                .to(this._defaultEffectTime, { opacity: 0 }, { easing: 'fade' })
                 .call(() => {
-                    _.removeLock()
+                    this.removeLock()
                     if (node.getComponent(cc.BlockInputEvents)) {
                         node.removeComponent(cc.BlockInputEvents)
                     }
@@ -180,7 +177,7 @@ export class UiUtils implements IUiUtils {
     }
 
     playClip(prefab: cc.Prefab, pos?: { x: number, y: number }, parent?: cc.Node, zIndex?: number): cc.Node {
-        let clip = _.createNode(prefab, pos, parent, zIndex);
+        let clip = this.createNode(prefab, pos, parent, zIndex);
         clip.getComponent(cc.Animation).play();
         return clip;
     }

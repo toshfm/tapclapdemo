@@ -1,8 +1,8 @@
-import { BLOCK } from "../enums/block";
-import { BLOCKTYPE } from "../enums/blockType";
+import { Block } from "../enums/Block";
+import { BlockType } from "../enums/BlockType";
 
 export interface IBlockData {
     id: string;
-    block: BLOCK;
-    blockType: BLOCKTYPE;
+    block: Block;
+    blockType: BlockType;
 }

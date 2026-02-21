@@ -1,4 +1,4 @@
-import { IBlockData } from "../iBlockData";
+import { IBlockData } from "../IBlockData";
 
 export interface IBlockGenerator {
     newBlock() : IBlockData;

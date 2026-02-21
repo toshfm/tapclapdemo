@@ -1,4 +1,4 @@
-export enum GAMEEVENT {
+export enum GameEvent {
     POINTS_CHANGED,
     MOVES_CHANGED,
     NEW_LEVEL,

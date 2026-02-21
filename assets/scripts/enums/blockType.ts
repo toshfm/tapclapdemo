@@ -1,4 +1,4 @@
-export enum BLOCKTYPE {
+export enum BlockType {
     normal,
     bonus
 }

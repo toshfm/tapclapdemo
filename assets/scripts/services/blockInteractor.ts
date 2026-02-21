@@ -3,36 +3,36 @@ import { NormalBlock } from "../blocks/NormalBlock";
 import { RocketHBlock } from "../blocks/RocketHBlock";
 import { RocketVBlock } from "../blocks/RocketVBlock";
 import { SuperBombBlock } from "../blocks/SuperBombBlock";
-import { BLOCK } from "../enums/block";
-import { BOOSTER } from "../enums/booster";
-import { IInteractedBlock } from "../interfaces/iInteractedBlock";
-import { IBlockInteractor } from "../interfaces/services/iBlockInteractor";
+import { Block } from "../enums/Block";
+import { Booster } from "../enums/Booster";
+import { IInteractedBlock } from "../interfaces/IInteractedBlock";
+import { IBlockInteractor } from "../interfaces/services/IBlockInteractor";
 
 export class BlockInteractor implements IBlockInteractor {
-    private _interactions: Map<BLOCK, IInteractedBlock> = new Map();
-    private _boosterInteractions: Map<BOOSTER, IInteractedBlock> = new Map();
+    private _interactions: Map<Block, IInteractedBlock> = new Map();
+    private _boosterInteractions: Map<Booster, IInteractedBlock> = new Map();
 
     //**Set strategies to interact */
     constructor() {
         const normalBlock = new NormalBlock();
 
-        this._interactions.set(BLOCK.block1, normalBlock);
-        this._interactions.set(BLOCK.block2, normalBlock);
-        this._interactions.set(BLOCK.block3, normalBlock);
-        this._interactions.set(BLOCK.block4, normalBlock);
+        this._interactions.set(Block.block1, normalBlock);
+        this._interactions.set(Block.block2, normalBlock);
+        this._interactions.set(Block.block3, normalBlock);
+        this._interactions.set(Block.block4, normalBlock);
 
-        this._interactions.set(BLOCK.bomb, new BombBlock());
-        this._interactions.set(BLOCK.rocketh, new RocketHBlock());
-        this._interactions.set(BLOCK.rocketv, new RocketVBlock());
+        this._interactions.set(Block.bomb, new BombBlock());
+        this._interactions.set(Block.rocketh, new RocketHBlock());
+        this._interactions.set(Block.rocketv, new RocketVBlock());
 
-        this._boosterInteractions.set(BOOSTER.superbomb, new SuperBombBlock())
+        this._boosterInteractions.set(Booster.superbomb, new SuperBombBlock())
     }
     
-    getBlockInteraction(block: BLOCK): IInteractedBlock {
+    getBlockInteraction(block: Block): IInteractedBlock {
         return this._interactions.get(block);
     }
 
-    getBoosterInteraction(booster: BOOSTER) : IInteractedBlock {
+    getBoosterInteraction(booster: Booster) : IInteractedBlock {
         return this._boosterInteractions.get(booster)
     }
 }

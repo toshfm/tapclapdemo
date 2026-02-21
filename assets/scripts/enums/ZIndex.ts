@@ -1,4 +1,4 @@
-export enum ZINDEX {
+export enum ZIndex {
     default = 1000,
     blocks = 1100,
     flyingBlocks = 1200,

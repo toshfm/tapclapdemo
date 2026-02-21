@@ -1,5 +1,5 @@
-import { getLogic, DIInitializer } from "../assets/scripts/ioc/init";
-import { GameState } from "../assets/scripts/services/gameState";
+import { getLogic, DIInitializer } from "../assets/scripts/ioc/Init";
+import { GameState } from "../assets/scripts/services/GameState";
 
 describe("Test suite", () => {
     test("func test", () => {

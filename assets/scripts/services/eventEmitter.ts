@@ -1,24 +1,24 @@
-import { GAMEEVENT } from "../enums/gameEvent";
-import { IEventEmitter, Listener } from "../interfaces/services/iEventEmitter";
+import { GameEvent } from "../enums/GameEvent";
+import { IEventEmitter, Listener } from "../interfaces/services/IEventEmitter";
 
 export class EventEmitter implements IEventEmitter {
-    private events: Map<GAMEEVENT, Set<Listener>> = new Map();
+    private events: Map<GameEvent, Set<Listener>> = new Map();
 
-    public emit(event: GAMEEVENT, data?: any) {
+    public emit(event: GameEvent, data?: any) {
         this.events.get(event)?.forEach(callback => callback(data));
     }
 
-    public on(event: GAMEEVENT, callback: Listener): () => void {
+    public on(event: GameEvent, callback: Listener): () => void {
         if (!this.events.has(event)) this.events.set(event, new Set());
         this.events.get(event).add(callback);
         return () => this.off(event, callback); // Возвращаем функцию отписки
     }
 
-    public off(event: GAMEEVENT, callback: Listener) {
+    public off(event: GameEvent, callback: Listener) {
         this.events.get(event)?.delete(callback);
     }
 
-    public removeAll(event?: GAMEEVENT): void {
+    public removeAll(event?: GameEvent): void {
          if (event !== undefined) {
             this.events.delete(event);
         } else {

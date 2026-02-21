@@ -1,29 +1,26 @@
 
-import { BLOCK } from "../enums/block";
-import { BLOCKTYPE } from "../enums/blockType";
-import { MathHelper } from "../helpers/mathHelper";
-import { IBlockData } from "../interfaces/iBlockData";
-import { IBlockGenerator } from "../interfaces/services/iBlockGenerator";
-import { IGameSettings } from "../interfaces/services/iGameSettings";
-
-let _: BlockFactory;
+import { Block } from "../enums/Block";
+import { BlockType } from "../enums/BlockType";
+import { MathHelper } from "../helpers/MathHelper";
+import { IBlockData } from "../interfaces/IBlockData";
+import { IBlockGenerator } from "../interfaces/services/IBlockGenerator";
+import { IGameSettings } from "../interfaces/services/IGameSettings";
 
 export class BlockFactory implements IBlockGenerator {
     private settings: IGameSettings;
-    _blocksAll: string[] = Object.values(BLOCK).filter((v) => isNaN(Number(v))) as string[]
-    _blocksNoBonuses: string[] = (Object.keys(BLOCK) as (keyof typeof BLOCK)[]).filter(key => isNaN(Number(key)) && key.startsWith('block'))
-    _blocksBonuses: string[] = (Object.keys(BLOCK) as (keyof typeof BLOCK)[]).filter(key => isNaN(Number(key)) && !key.startsWith('block'))
+    _blocksAll: string[] = Object.values(Block).filter((v) => isNaN(Number(v))) as string[]
+    _blocksNoBonuses: string[] = (Object.keys(Block) as (keyof typeof Block)[]).filter(key => isNaN(Number(key)) && key.startsWith('block'))
+    _blocksBonuses: string[] = (Object.keys(Block) as (keyof typeof Block)[]).filter(key => isNaN(Number(key)) && !key.startsWith('block'))
 
     constructor(settings: IGameSettings) {
-        _ = this;
-        _.settings = settings;
+        this.settings = settings;
     }
 
     newBlock(): IBlockData {
-        if (MathHelper.getRandomInt(0, _.settings.getBonusChance()) === 1) {
-            return _.bonusBlock();
+        if (MathHelper.getRandomInt(0, this.settings.bonusChance) == 1) {
+            return this.bonusBlock();
         } else {
-            return _.normalBlock();
+            return this.normalBlock();
         }
     }
 
@@ -31,7 +28,7 @@ export class BlockFactory implements IBlockGenerator {
         return {
             id: MathHelper.newUUID(),
             block: this.getRandomBonusBlock(),
-            blockType: BLOCKTYPE.bonus
+            blockType: BlockType.bonus
         }
 
     }
@@ -40,16 +37,16 @@ export class BlockFactory implements IBlockGenerator {
         return {
             id: MathHelper.newUUID(),
             block: this.getRandomNormalBlock(),
-            blockType: BLOCKTYPE.normal
+            blockType: BlockType.normal
         }
 
     }
 
     private getRandomBonusBlock() {
-        return BLOCK[_._blocksBonuses[MathHelper.getRandomInt(0, this._blocksBonuses.length - 1)]];
+        return Block[this._blocksBonuses[MathHelper.getRandomInt(0, this._blocksBonuses.length - 1)]];
     }
 
     private getRandomNormalBlock() {
-        return BLOCK[_._blocksNoBonuses[MathHelper.getRandomInt(0, this._blocksNoBonuses.length - 1)]]
+        return Block[this._blocksNoBonuses[MathHelper.getRandomInt(0, this._blocksNoBonuses.length - 1)]]
     }
 }

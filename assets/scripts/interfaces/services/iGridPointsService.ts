@@ -1,7 +1,7 @@
-import { IPoint } from "../iPoint";
+import { IMatrix } from "../IMatrix";
+import { IPoint } from "../IPoint";
 
-export interface IGridViewService {
+export interface IGridPointsService {
+    gridPoints: IMatrix<IPoint>
     initGridPoints(): void;
-    setGridPoint(row: number, col: number, point: IPoint | null): void;
-    getGridPoint(row: number, col: number): IPoint | null;
 }

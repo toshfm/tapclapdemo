@@ -1,24 +1,11 @@
 export interface IGameSettings {
-    setRows(value: number): void;
-    getRows(): number;
-
-    setCols(value: number): void;
-    getCols(): number;
-
-    getColWidth(): number;
-    getRowHeight(): number;
-    getPossibleStartBonuses(): number;
-    getBonusChance(): number;
-
-    getStartedMoves(): number;
-    setStartedMoves(value: number): void;
-
-    getTargetPoints(): number;
-    setTargetPoints(value: number): void;
-
-    getStartedBoosterReshuffle(): number;
-    setStartedBoosterReshuffle(value: number): void;
-
-    getStartedBoosterBomb(): number;
-    setStartedBoosterBomb(value: number): void;
+    rows : number;
+    cols: number;
+    colWidth: number;
+    rowHeight: number
+    bonusChance : number;
+    startedMoves: number;
+    targetPoints: number;
+    startedBoosterReshuffle: number;
+    startedBoosterBomb: number;
 }

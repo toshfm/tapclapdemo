@@ -1,88 +1,89 @@
-import { BLOCKTYPE } from "../enums/blockType";
-import { BOOSTER } from "../enums/booster";
-import { GAMEEVENT } from "../enums/gameEvent";
-import { MathHelper } from "../helpers/mathHelper";
-import { IGridElement } from "../interfaces/iGridElement";
-import { IInteractResponse, IInteractResponseChained } from "../interfaces/iInteractResponse";
-import { IMove } from "../interfaces/iMove";
-import { IBlockGenerator } from "../interfaces/services/iBlockGenerator";
-import { IBlockInteractor } from "../interfaces/services/iBlockInteractor";
-import { IEventEmitter } from "../interfaces/services/iEventEmitter";
-import { IGameSettings } from "../interfaces/services/iGameSettings";
-import { IGameState } from "../interfaces/services/iGameState";
-import { IGridViewService } from "../interfaces/services/iGridPointsService";
-import { ILogicService } from "../interfaces/services/iLogicService";
-import { Queue } from "../misc/queue";
-
-let _: LogicService;
+import { BlockType } from "../enums/BlockType";
+import { Booster } from "../enums/Booster";
+import { GameEvent } from "../enums/GameEvent";
+import { MathHelper } from "../helpers/MathHelper";
+import { IGridElement } from "../interfaces/IGridElement";
+import { IInteractResponse, IInteractResponseChained } from "../interfaces/IInteractResponse";
+import { IMove } from "../interfaces/IMove";
+import { IBlockGenerator } from "../interfaces/services/IBlockGenerator";
+import { IBlockInteractor } from "../interfaces/services/IBlockInteractor";
+import { IEventEmitter } from "../interfaces/services/IEventEmitter";
+import { IGameSettings } from "../interfaces/services/IGameSettings";
+import { IGameState } from "../interfaces/services/IGameState";
+import { IGridPointsService } from "../interfaces/services/IGridPointsService";
+import { ILogicService } from "../interfaces/services/ILogicService";
+import { Matrix } from "../misc/Matrix";
+import { Queue } from "../misc/Queue";
 
 export class LogicService implements ILogicService {
     private settings: IGameSettings;
     private state: IGameState;
-    private gridPoints: IGridViewService;
+    private gridPoints: IGridPointsService;
     private blockGenerator: IBlockGenerator;
     private blockInteractor: IBlockInteractor;
     private events: IEventEmitter;
 
-    constructor(settings: IGameSettings, state: IGameState, blockGenerator: IBlockGenerator, blockInteractor: IBlockInteractor, events: IEventEmitter, gridPoints: IGridViewService) {
-        _ = this;
-        _.settings = settings;
-        _.state = state;
-        _.blockGenerator = blockGenerator;
-        _.blockInteractor = blockInteractor;
-        _.events = events;
-        _.gridPoints = gridPoints;
+    constructor(settings: IGameSettings, state: IGameState, blockGenerator: IBlockGenerator, blockInteractor: IBlockInteractor, events: IEventEmitter, gridPoints: IGridPointsService) {
+        this.settings = settings;
+        this.state = state;
+        this.blockGenerator = blockGenerator;
+        this.blockInteractor = blockInteractor;
+        this.events = events;
+        this.gridPoints = gridPoints;
     }
 
     async newLevel() {
-        _.clearState();
+        this.clearState();
         const gridIsReady = new Promise<void>((resolve) => {
-            const unsub = _.events.on(GAMEEVENT.GRID_PREPARED, () => {
+            const unsub = this.events.on(GameEvent.GRID_PREPARED, () => {
                 unsub();
                 resolve();
             });
         });
-        _.events.emit(GAMEEVENT.PREPARE_GRID);
+        this.events.emit(GameEvent.PREPARE_GRID);
         await gridIsReady;
-        _.fillGrid();
+        this.fillGrid();
     }
 
     clearState() {
-        _.state.toggleActiveBooster(null);
-        _.state.setCollectedPoints(0);
-        _.state.setMoves(_.settings.getStartedMoves());
-        _.state.setBoosterBomb(_.settings.getStartedBoosterBomb());
-        _.state.setBoosterReshuffle(_.settings.getStartedBoosterReshuffle());
-        _.gridPoints.initGridPoints();
+        this.state.toggleActiveBooster(null);
+        this.state.collectedPoints = 0;
+        this.state.moves = this.settings.startedMoves;
+        this.state.boosterBomb = this.settings.startedBoosterBomb;
+        this.state.boosterReshuffle = this.settings.startedBoosterReshuffle;
+        debugger;
+        this.gridPoints.initGridPoints();
     }
 
     fillGrid() {
-        let rows = _.settings.getRows();
-        let cols = _.settings.getCols();
-        _.state.initGridBlocks(rows, cols);
+        debugger;
+        let rows = this.settings.rows;
+        let cols = this.settings.cols;
+        this.state.gridBlocks = new Matrix(rows, cols);
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                let newBlock = _.state.setGridBlock(row, col, {
-                    ..._.blockGenerator.newBlock(),
+                let newBlock = this.state.gridBlocks.set(row, col, {
+                    ...this.blockGenerator.newBlock(),
                     row: row,
                     col: col
                 });
-                _.events.emit(GAMEEVENT.BLOCK_CREATED, newBlock);
+                this.events.emit(GameEvent.BLOCK_CREATED, newBlock);
             }
         }
+        let t = 1;
     }
 
-    handleBoosterClick(booster: BOOSTER) {
+    handleBoosterClick(booster: Booster) {
         switch (booster) {
-            case BOOSTER.reshuffle:
-                if (_.state.getBoosterReshuffle() > 0) {
-                    let moves = _.reshuffle();
-                    _.state.minusBoosterReshuffle();
-                    _.events.emit(GAMEEVENT.RESHUFFLE, moves);
+            case Booster.reshuffle:
+                if (this.state.boosterReshuffle > 0) {
+                    let moves = this.reshuffle();
+                    this.state.boosterReshuffle--;
+                    this.events.emit(GameEvent.RESHUFFLE, moves);
                 }
                 break;
-            case BOOSTER.superbomb:
-                _.state.toggleActiveBooster(BOOSTER.superbomb);
+            case Booster.superbomb:
+                this.state.toggleActiveBooster(Booster.superbomb);
                 break;
             default: return;
         }
@@ -90,25 +91,25 @@ export class LogicService implements ILogicService {
 
     addCollectedPoints(blockType?: string) {
         //could be logic to add differents points depends on blockType
-        _.state.addCollectedPoins();
+        this.state.collectedPoints++;
     }
 
     checkWinLose() {
-        if (_.state.getCollectedPoints() > _.settings.getTargetPoints()) {
-            _.events.emit(GAMEEVENT.WIN);
-        } else if (_.state.getMoves() == 0) {
-            _.events.emit(GAMEEVENT.LOSE);
+        if (this.state.collectedPoints > this.settings.targetPoints) {
+            this.events.emit(GameEvent.WIN);
+        } else if (this.state.moves == 0) {
+            this.events.emit(GameEvent.LOSE);
         }
     }
 
     reshuffle(): Array<IMove> {
         let result: IMove[] = []
         let arr: IGridElement[] = [];
-        let rows = _.settings.getRows();
-        let cols = _.settings.getCols();
+        let rows = this.settings.rows;
+        let cols = this.settings.cols;
         for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < _.settings.getCols(); col++) {
-                arr.push(_.state.getGridBlock(row, col));
+            for (let col = 0; col < cols; col++) {
+                arr.push(this.state.gridBlocks.get(row, col));
             }
         }
         MathHelper.shuffleArrayInPlace(arr);
@@ -124,7 +125,7 @@ export class LogicService implements ILogicService {
                 }
                 arr[i].col = col;
                 arr[i].row = row;
-                _.state.setGridBlock(row, col, arr[i]);
+                this.state.gridBlocks.set(row, col, arr[i]);
                 i++;
             }
         }
@@ -139,21 +140,21 @@ export class LogicService implements ILogicService {
             bonusBlocks: new Set<string>(),
             moveSuccess: false
         }
-        let gridEl = _.state.getGridBlockById(gId);
+        let gridEl = this.state.gridBlocks.data.find(x => x?.id == gId);
 
         if (gridEl) {
             (response as IInteractResponseChained).chain = new Queue<string>();
 
             let firstTry = true;
 
-            let activeBooster = _.state.getActiveBooster();
+            let activeBooster = this.state.activeBooster;
             if (activeBooster !== null) {
-                let strategy = _.blockInteractor.getBoosterInteraction(activeBooster);
-                let affected = strategy.interact(gridEl, _.state, _.events);
-                _.processAffectedBlocks(affected, response);
-                if (activeBooster == BOOSTER.superbomb) {
-                    _.state.toggleActiveBooster(null);
-                    _.state.minusBoosterBomb();
+                let strategy = this.blockInteractor.getBoosterInteraction(activeBooster);
+                let affected = strategy.interact(gridEl, this.state, this.events);
+                this.processAffectedBlocks(affected, response);
+                if (activeBooster == Booster.superbomb) {
+                    this.state.toggleActiveBooster(null);
+                    this.state.boosterBomb--;
                 }
             } else {
                 (response as IInteractResponseChained).chain.enqueue(gId);
@@ -161,14 +162,14 @@ export class LogicService implements ILogicService {
 
             while ((response as IInteractResponseChained).chain.count() > 0) {
                 let el = (response as IInteractResponseChained).chain.dequeue();
-                let gEl = firstTry ? gridEl : _.state.getGridBlockById(el);
-                _.processOne(gEl, response);
+                let gEl = firstTry ? gridEl : this.state.gridBlocks.data.find(x => x?.id == el);
+                this.processOne(gEl, response);
                 if (gEl) {
-                    let strategy = _.blockInteractor.getBlockInteraction(gEl.block);
-                    let affected = strategy.interact(gEl, _.state, _.events);
-                    _.processAffectedBlocks(affected, response);
-                    if (gEl.blockType == BLOCKTYPE.bonus) {
-                        _.state.setGridBlock(gEl.row, gEl.col, null);
+                    let strategy = this.blockInteractor.getBlockInteraction(gEl.block);
+                    let affected = strategy.interact(gEl, this.state, this.events);
+                    this.processAffectedBlocks(affected, response);
+                    if (gEl.blockType == BlockType.bonus) {
+                        this.state.gridBlocks.set(gEl.row, gEl.col, null);
                     }
                 }
                 firstTry = false;
@@ -176,31 +177,31 @@ export class LogicService implements ILogicService {
             response.moveSuccess = response.normalBlocks.size > 1 || response.bonusBlocks.size >= 1;
             
             if (response.moveSuccess) {
-                _.processResponse(response);
-                _.state.minusMove();
+                this.processResponse(response);
+                this.state.moves--;
             }
-            _.events.emit(GAMEEVENT.BLOCK_CLICK_HAPPENED, response);
+            this.events.emit(GameEvent.BLOCK_CLICK_HAPPENED, response);
         } else {
             return;
         }
     }
 
     private processOne(block: IGridElement, response: IInteractResponse) {
-        if (block?.blockType == BLOCKTYPE.bonus) {
+        if (block?.blockType == BlockType.bonus) {
             response.bonusBlocks.add(block.id);
-        } else if (block?.blockType == BLOCKTYPE.normal) {
+        } else if (block?.blockType == BlockType.normal) {
             response.normalBlocks.add(block.id);
         }
     }
 
     private processAffectedBlocks(blocks: Array<IGridElement>, response: IInteractResponse) {
         blocks.forEach(block => {
-            _.processAffectedBlock(block, response);
+            this.processAffectedBlock(block, response);
         });
     }
 
     private processAffectedBlock(block: IGridElement, response: IInteractResponse) {
-        if (block.blockType == BLOCKTYPE.bonus) {
+        if (block.blockType == BlockType.bonus) {
             if (!response.bonusBlocks.has(block.id)) {
                 (response as IInteractResponseChained).chain.enqueue(block.id)
             }
@@ -211,47 +212,48 @@ export class LogicService implements ILogicService {
 
     private processResponse(response: IInteractResponse) {
         if (response.moveSuccess) {
-            _.destroyBlocks(response);
-            _.moveAndNewBlocks(response);
+            this.destroyBlocks(response);
+            this.moveAndNewBlocks();
         }
 
     }
 
-    private moveAndNewBlocks(response: IInteractResponse) {
-        let cols = _.settings.getCols();
-        let rows = _.settings.getRows();
+    private moveAndNewBlocks() {
+        let cols = this.settings.cols;
+        let rows = this.settings.rows;
         let moved = [];
         for (let col = 0; col < cols; col++) {
             let existed: IGridElement[] = [];
             for (let row = 0; row < rows; row++) {
-                if (_.state.getGridBlock(row, col)) {
-                    existed.push(_.state.getGridBlock(row, col))
+                let block = this.state.gridBlocks.get(row, col)
+                if (block) {
+                    existed.push(block)
                 }
             }
             for (let row = 0; row < rows; row++) {
                 let above = 1;
                 if (existed[row]) {
                     let block = { ...existed[row], row: row };
-                    _.state.setGridBlock(row, col, block)
+                    this.state.gridBlocks.set(row, col, block)
                     moved.push({ id: block.id, row: row, col:col });
                 } else {
-                    let block = { ..._.blockGenerator.newBlock(), row: row, col: col, above: above }
-                    _.state.setGridBlock(row, col, block);
-                    _.events.emit(GAMEEVENT.BLOCK_CREATED, block);
+                    let block = { ...this.blockGenerator.newBlock(), row: row, col: col, above: above }
+                    this.state.gridBlocks.set(row, col, block);
+                    this.events.emit(GameEvent.BLOCK_CREATED, block);
                     above++;
                 }
             }
         }
         if (moved.length > 0) {
-            _.events.emit(GAMEEVENT.RESHUFFLE, moved);
+            this.events.emit(GameEvent.RESHUFFLE, moved);
         }
     }
 
     private destroyBlocks(response: IInteractResponse) {
-        for (let row = 0; row < _.settings.getRows(); row++) {
-            for (let col = 0; col < _.settings.getCols(); col++) {
-                if (response.normalBlocks.has(_.state.getGridBlock(row, col)?.id)) {
-                    _.state.setGridBlock(row, col, null);
+        for (let row = 0; row < this.settings.rows; row++) {
+            for (let col = 0; col < this.settings.cols; col++) {
+                if (response.normalBlocks.has(this.state.gridBlocks.get(row, col)?.id)) {
+                    this.state.gridBlocks.set(row, col, null);
                 }
             }
         }
@@ -260,12 +262,12 @@ export class LogicService implements ILogicService {
     //For testing purposes
     private translate(num: number) {
         cc.log('----' + num);
-        for (let row = 0; row < _.settings.getRows(); row++) {
-            if (_.state.getGridBlock(row, 0)) {
-                cc.log(_.state.getGridBlock(row, 0).row
-                    + ' ' + _.state.getGridBlock(row, 0).col
-                    + ' ' + _.state.getGridBlock(row, 0).id
-                    + ' ' + _.state.getGridBlock(row, 0).above
+        for (let row = 0; row < this.settings.rows; row++) {
+            if (this.state.gridBlocks.get(row, 0)) {
+                cc.log(this.state.gridBlocks.get(row, 0).row
+                    + ' ' + this.state.gridBlocks.get(row, 0).col
+                    + ' ' + this.state.gridBlocks.get(row, 0).id
+                    + ' ' + this.state.gridBlocks.get(row, 0).above
                     );
             } else {
                 cc.log(row + ' ' + 0 + ' ' + 'null');

@@ -1,4 +1,4 @@
-import { Queue } from "../assets/scripts/misc/queue";
+import { Queue } from "../assets/scripts/misc/Queue";
 
 describe("Classes test", () => {
     test("queue count test", () => {

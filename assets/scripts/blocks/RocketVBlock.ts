@@ -1,16 +1,16 @@
-import { GAMEEVENT } from "../enums/gameEvent";
-import { IGridElement } from "../interfaces/iGridElement";
-import { IInteractedBlock } from "../interfaces/iInteractedBlock";
-import { IEventEmitter } from "../interfaces/services/iEventEmitter";
-import { IGameState } from "../interfaces/services/iGameState";
+import { GameEvent } from "../enums/GameEvent";
+import { IGridElement } from "../interfaces/IGridElement";
+import { IInteractedBlock } from "../interfaces/IInteractedBlock";
+import { IEventEmitter } from "../interfaces/services/IEventEmitter";
+import { IGameState } from "../interfaces/services/IGameState";
 
 export class RocketVBlock implements IInteractedBlock {
     interact(gridEl: IGridElement, state: IGameState, events: IEventEmitter): Array<IGridElement> {
         let result = new Array<IGridElement>();
-        for (let row = 0; row < state.getGridBlocksRows(); row++) {
-            result.push(state.getGridBlock(row, gridEl.col));
+        for (let row = 0; row < state.gridBlocks.rows; row++) {
+            result.push(state.gridBlocks.get(row, gridEl.col));
         }
-        events?.emit(GAMEEVENT.ROCKETV_ANIMATION, gridEl);
+        events?.emit(GameEvent.ROCKETV_ANIMATION, gridEl);
         return result.filter(x => x !== null && x !== undefined);
     }
 }

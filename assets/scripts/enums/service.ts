@@ -1,4 +1,4 @@
-export enum SERVICE {
+export enum Service {
     LogicService = 'LogicService',
     GameSettings = 'GameSettings',
     GameState = 'GameState',

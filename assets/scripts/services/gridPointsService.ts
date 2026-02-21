@@ -1,34 +1,34 @@
-import { IPoint } from "../interfaces/iPoint";
-import { IGameSettings } from "../interfaces/services/iGameSettings";
-import { IGridViewService } from "../interfaces/services/iGridPointsService";
+import { IMatrix } from "../interfaces/IMatrix";
+import { IPoint } from "../interfaces/IPoint";
+import { IGameSettings } from "../interfaces/services/IGameSettings";
+import { IGridPointsService } from "../interfaces/services/IGridPointsService";
+import { Matrix } from "../misc/Matrix";
 
-export class GridViewService implements IGridViewService {
-    private _gridPoints: (IPoint | null)[][];
+export class GridPointsService implements IGridPointsService {
+    private _gridPoints: IMatrix<IPoint>;
     private settings: IGameSettings;
 
     constructor(settings: IGameSettings) {
         this.settings = settings;
     }
 
+    get gridPoints() {
+        return this._gridPoints
+    }
+
     initGridPoints(): void {
-        let rows = this.settings.getRows();
-        let cols = this.settings.getCols();
-        this._gridPoints = Array(rows).fill(null).map(() => Array(cols).fill(null));
+        let rows = this.settings.rows;
+        let cols = this.settings.cols;
+        let colWitdh = this.settings.colWidth;
+        let rowHeight = this.settings.rowHeight;
+        this._gridPoints = new Matrix<IPoint>(rows, cols);
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                this.setGridPoint(row, col, {
-                    x: this.settings.getColWidth() / 2 - cols * (this.settings.getColWidth() / 2) + col * this.settings.getColWidth(),
-                    y: this.settings.getRowHeight() / 2 - rows * (this.settings.getRowHeight() / 2) + row * this.settings.getRowHeight()
+                this._gridPoints.set(row, col, {
+                    x: colWitdh / 2 - cols * (colWitdh / 2) + col * colWitdh,
+                    y: rowHeight / 2 - rows * (rowHeight / 2) + row * rowHeight
                 })
             }
         }
-    }
-
-    setGridPoint(row, col, point) {
-        this._gridPoints[row][col] = point;
-    }
-
-    getGridPoint(row, col) {
-        return this._gridPoints[row][col];
     }
 }

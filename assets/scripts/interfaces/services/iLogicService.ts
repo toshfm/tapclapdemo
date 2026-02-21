@@ -1,9 +1,9 @@
-import { BOOSTER } from "../../enums/booster";
+import { Booster } from "../../enums/Booster";
 
 export interface ILogicService {
     newLevel(): void;
     handleBlockClick(id: string): void;
-    handleBoosterClick(booster: BOOSTER): void;
+    handleBoosterClick(booster: Booster): void;
     checkWinLose(): void;
     addCollectedPoints(blockType?: string);
 }

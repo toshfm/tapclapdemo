@@ -1,4 +1,4 @@
-export enum BLOCK {
+export enum Block {
     block1,
     block2,
     block3,

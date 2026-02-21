@@ -1,5 +1,5 @@
-import { IMove } from "./iMove";
-import { IQueue } from "./iQueue";
+import { IMove } from "./IMove";
+import { IQueue } from "./IQueue";
 
 export interface IInteractResponse {
     interactedBlockId: string;

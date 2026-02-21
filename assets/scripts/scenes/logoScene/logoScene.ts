@@ -1,10 +1,8 @@
-import { IUiUtils } from "../../interfaces/services/iUiUtils";
-import { DIInitializer, getUI } from "../../ioc/init";
+import { IUiUtils } from "../../interfaces/services/IUiUtils";
+import { DIInitializer, getUI } from "../../ioc/Init";
 
 
 const { ccclass, property } = cc._decorator;
-
-let _: LogoScene
 
 @ccclass   
 export default class LogoScene extends cc.Component {
@@ -12,13 +10,12 @@ export default class LogoScene extends cc.Component {
 
     onLoad() {
         DIInitializer.initialize();
-        _ = this;
-        _.ui = getUI()
+        this.ui = getUI()
     }
 
     start() {
-        _.scheduleOnce(function () {
-            _.ui.nextScene("Main")
+        this.scheduleOnce(() => {
+            this.ui.nextScene("Main")
         }, 2);
     }
 }

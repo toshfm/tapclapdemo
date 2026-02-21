@@ -1,4 +1,4 @@
-export enum BOOSTER {
+export enum Booster {
     superbomb,
     reshuffle
 }

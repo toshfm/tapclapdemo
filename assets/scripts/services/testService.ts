@@ -1,4 +1,4 @@
-import { ITestService } from "../interfaces/services/iTestService";
+import { ITestService } from "../interfaces/services/ITestService";
 
 export class TestService implements ITestService {
     someWork(): void {
