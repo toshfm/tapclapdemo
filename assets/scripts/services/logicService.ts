@@ -51,12 +51,10 @@ export class LogicService implements ILogicService {
         this.state.moves = this.settings.startedMoves;
         this.state.boosterBomb = this.settings.startedBoosterBomb;
         this.state.boosterReshuffle = this.settings.startedBoosterReshuffle;
-        debugger;
         this.gridPoints.initGridPoints();
     }
 
     fillGrid() {
-        debugger;
         let rows = this.settings.rows;
         let cols = this.settings.cols;
         this.state.gridBlocks = new Matrix(rows, cols);
