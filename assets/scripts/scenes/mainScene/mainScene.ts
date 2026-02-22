@@ -130,8 +130,8 @@ export default class MainScene extends cc.Component {
         this.events.on(GameEvent.MOVES_CHANGED, (value) => this.updateMoves(value));
         this.events.on(GameEvent.POINTS_CHANGED, (value) => this.updatePoints(value));
         this.events.on(GameEvent.PREPARE_GRID, async () => await this.startNewLevel());
-        this.events.on(GameEvent.BOOSTER_RESHUFFLE_QANTITY_CHANGED, (value) => this.updateReshuffleCount(value));
         this.events.on(GameEvent.BOOSTER_BOMB_QANTITY_CHANGED, (value) => this.updateBombCount(value));
+        this.events.on(GameEvent.BOOSTER_RESHUFFLE_QANTITY_CHANGED, (value) => this.updateReshuffleCount(value));
         this.events.on(GameEvent.BOOSTER_BOMB_STATE_CHANGED, (value) => this.updateBombState(value));
         this.events.on(GameEvent.RESHUFFLE, async (value) => await this.reshuffle(value));
         this.events.on(GameEvent.WIN, async () => await this.winLose());
@@ -259,7 +259,7 @@ export default class MainScene extends cc.Component {
             return new Promise<void>((resolve) => {
                 cc.tween(gridEl)
                     .to(MathHelper.getRandomFloat(0.2, 0.4), {
-                        position: cc.v3(gridEl.getPosition().add(cc.v2(MathHelper.getRandomInt(-this.settings.colWidth* 2, this.settings.colWidth * 2), MathHelper.getRandomInt(-this.settings.colWidth * 2, this.settings.colWidth * 2)))),
+                        position: cc.v3(gridEl.getPosition().add(cc.v2(MathHelper.getRandomInt(-this.settings.colWidth * 2, this.settings.colWidth * 2), MathHelper.getRandomInt(-this.settings.colWidth * 2, this.settings.colWidth * 2)))),
                         scale: 1.1,
                         angle: MathHelper.getRandomInt(-1000, 1000)
                     }, { easing: 'circInOut' })

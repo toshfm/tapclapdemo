@@ -1,8 +1,8 @@
-import { BombBlock } from "../blocks/BombBlock";
-import { NormalBlock } from "../blocks/NormalBlock";
-import { RocketHBlock } from "../blocks/RocketHBlock";
-import { RocketVBlock } from "../blocks/RocketVBlock";
-import { SuperBombBlock } from "../blocks/SuperBombBlock";
+import { BombBlock } from "../strategies/BombBlock";
+import { NormalBlock } from "../strategies/NormalBlock";
+import { RocketHBlock } from "../strategies/RocketHBlock";
+import { RocketVBlock } from "../strategies/RocketVBlock";
+import { SuperBombBlock } from "../strategies/SuperBombBlock";
 import { Block } from "../enums/Block";
 import { Booster } from "../enums/Booster";
 import { IInteractedBlock } from "../interfaces/IInteractedBlock";

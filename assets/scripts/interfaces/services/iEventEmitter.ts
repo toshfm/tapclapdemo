@@ -1,10 +1,10 @@
-import { GameEvent } from "../../enums/GameEvent";
+import { GameEvent, IEventMap } from "../../enums/GameEvent";
 
-export type Listener = (data?: any) => void;
+export type Listener<T> = (data?: T) => void;
 
 export interface IEventEmitter {
-    emit(event: GameEvent, data?: any): void
-    on(event: GameEvent, callback: Listener): () => void
-    off(event: GameEvent, callback: Listener)
+    emit<E extends keyof IEventMap>(event: E, data?: IEventMap[E]): void
+    on<E extends keyof IEventMap>(event: E, callback: Listener<IEventMap[E]>): () => void
+    off<E extends keyof IEventMap>(event: E, callback: Listener<IEventMap[E]>)
     removeAll(event?: GameEvent): void;
 }
